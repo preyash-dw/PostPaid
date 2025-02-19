@@ -13,13 +13,21 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://postpaid-mu.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE"],
-  },
+    credentials: true
+  }
 });
 
+
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ["https://postpaid-mu.vercel.app"], // Allow your frontend domain
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 
 // Connect to MongoDB
 mongoose
