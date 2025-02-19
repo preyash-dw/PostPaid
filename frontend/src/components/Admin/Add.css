@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;700&family=Montserrat:wght@400;700&display=swap');
+
+.add-container {
+  text-align: left;
+  max-width: 400px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #1e1e2f;
+  color: white;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.add-title {
+  font-size: 2rem;
+  text-align: center;
+  color: #a88dfc;
+  margin-bottom: 15px;
+}
+
+.add-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.add-form label {
+  font-weight: bold;
+  margin-top: 10px;
+  font-size: 1rem;
+}
+
+.add-form input,
+.add-form select {
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  background: #2a2a3b;
+  color: white;
+}
+
+.add-form input::placeholder {
+  color: #b0b0b0;
+}
+
+.add-form select {
+  cursor: pointer;
+}
+
+.submit-btn {
+  margin-top: 20px;
+  padding: 12px;
+  background: linear-gradient(to right, #6a11cb, #2575fc);
+  color: white;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(to right, #2575fc, #6a11cb);
+}
+
+.submit-btn:disabled {
+  background: gray;
+  cursor: not-allowed;
+}

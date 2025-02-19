@@ -1,0 +1,159 @@
+
+  
+  .table-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+  }
+  
+  .table-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .table-buttons button {
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #4299e1, #7f59ca);
+    color: white;
+    border-radius: 20px;
+    transition: background 0.3s;
+  }
+  
+  .table-buttons button.selected {
+    background: #0056b3;
+  }
+  
+  .table-buttons button:hover {
+    background: #0056b3;
+  }
+  
+  .search-section {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .search-box, .limit-box {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+  }
+  
+  .search-box {
+    width: 200px;
+  }
+  
+  .limit-box {
+    display: none;
+    width: 60px;
+  }
+
+  
+  .search-box:focus, .limit-box:focus {
+    
+    background: linear-gradient(to bottom, #aed6f7, #bda3f3);
+  }
+  
+  table {
+    width: 90%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    margin-left: 2rem;
+  }
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+  }
+  
+  th {
+    background: linear-gradient(to bottom, #4299e1, #7f59ca);
+    color: white;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    margin-top: 15px;
+    margin-left: 2rem;
+  }
+  
+  .pagination button {
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+  
+  .pagination button:hover {
+    background: #0056b3;
+  }
+  
+  .pagination button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  
+  
+
+  @media (max-width: 768px) {
+     table{
+        margin-left: 0.1rem;
+     }
+     .pagination{
+        margin-left: 0.1rem;
+     }
+      .table-buttons{
+        width: 96%;
+        margin-left: -3%;
+     } 
+     .search-section{
+        margin-left: -1.5rem;
+     }
+  }
+  @media (max-width: 468px) {
+    table{
+       margin-left: 0.1rem;
+    }
+    .pagination{
+       margin-left: 0.1rem;
+    }
+  
+    .search-section {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      align-items: center;
+      gap: 5px;
+      margin-left: 0;
+    }
+  
+    .search-box, .limit-box {
+      width: 70%;
+    }
+  
+    .search-box:nth-child(3) {
+      margin-top: 10px;
+    }
+ }
+  

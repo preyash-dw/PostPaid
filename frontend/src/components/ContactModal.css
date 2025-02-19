@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;700&family=Montserrat:wght@400;700&display=swap');
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    padding: 1rem;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+}
+
+.modal-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    font-family: 'Barlow', sans-serif;
+    color: #333;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: 1rem;
+    margin: 0.5rem 0;
+    font-family: 'Montserrat', sans-serif;
+    color: #444;
+    padding: 0.5rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.contact-item:hover {
+    transform: scale(1.05);
+    background: #f1f1f1;
+}
+
+.contact-item i {
+    font-size: 1.3rem;
+    margin-right: 10px;
+    color: #6c5ce7;
+    width: 30px;
+    text-align: center;
+}
+
+.contact-text {
+    flex: 1;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.close-button {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: white;
+    font-size: 1rem;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.close-button:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .modal-overlay{
+        width:90%
+    }
+    .modal-content {
+        width: 90%;
+        padding: 1.5rem;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+    }
+
+    .contact-item {
+        font-size: 0.7rem;
+        padding: 0.5rem;
+    }
+
+    .contact-item i {
+        font-size: 1rem;
+        margin-right: 5px;
+    }
+
+    .close-button {
+        font-size: 0.9rem;
+        padding: 0.6rem 1.2rem;
+    }
+}

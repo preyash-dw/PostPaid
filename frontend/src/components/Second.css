@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;700&family=Montserrat:wght@400;700&display=swap');
+
+.collection-container {
+    text-align: left;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+
+.collection-title {
+    font-size: 2.7rem;
+    font-family: 'Barlow', sans-serif;
+    background: linear-gradient(to bottom, #4299e1, #7f59ca);
+    -webkit-background-clip: text;
+    color: transparent;
+    margin-bottom: 10px;
+    margin-left: 10%;
+}
+
+/* Grid Layout */
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    max-width: 1030px;
+    margin: 0 auto;
+}
+
+.collection-item {
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+.collection-item:hover {
+    transform: scale(1.05);
+}
+
+.collection-image {
+    width: 100%;
+    max-width: 250px;
+    height: 150px;
+    border-radius: 10px;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.collection-item-title {
+    font-size: 1.3rem;
+    font-family: 'Barlow', sans-serif;
+    margin-top: 10px;
+    font-weight: 700;
+    color: rgba(20, 20, 20, 0.884);
+}
+
+.collection-description {
+    font-size: 1rem;
+    font-family: 'Montserrat', sans-serif;
+    color: #353333;
+    letter-spacing: 1px;
+}
+
+/* ---- MODAL STYLING ---- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.modal-overlay.show .modal-content {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.modal-image {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.modal-features {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+    margin-top: 10px;
+}
+
+.modal-features li {
+    font-size: 1rem;
+    color: #444;
+    margin: 5px 0;
+    padding-left: 20px;
+    position: relative;
+}
+
+.modal-features li::before {
+    content: "✔";
+    color: #4CAF50;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+/* Close Button */
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #333;
+    transition: color 0.3s;
+}
+
+.close-modal:hover {
+    color: #ff0000;
+}
+
+/* Contact Us Button */
+.contact-button {
+    background: linear-gradient(to right, #4299e1, #7f59ca);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin-top: 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease-in-out;
+}
+
+.contact-button:hover {
+    background: linear-gradient(to right, #7f59ca, #4299e1);
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {  /* Tablets */
+    .collection-title {
+        font-size: 2.2rem;
+        margin-left: 5%;
+    }
+    
+    .collection-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
+    }
+
+    .collection-image {
+        height: 140px;
+    }
+
+    .collection-item-title {
+        font-size: 1.2rem;
+    }
+
+    .collection-description {
+        font-size: 1rem;
+    }
+
+    .modal-content {
+        width: 350px;
+    }
+}
+
+@media (max-width: 768px) {  /* Mobile Devices */
+    .collection-title {
+        font-size: 2rem;
+        text-align: center;
+        margin-left: 0;
+    }
+
+    .collection-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .collection-image {
+        height: 120px;
+    }
+
+    .collection-item-title {
+        font-size: 1.1rem;
+    }
+
+    .collection-description {
+        font-size: 0.95rem;
+    }
+
+    .modal-content {
+        width: 90%;
+    }
+}
+
+@media (max-width: 480px) {  /* Small Mobile Devices */
+    .collection-container {
+        padding: 10px;
+    }
+
+    .collection-title {
+        font-size: 1.8rem;
+    }
+
+    .collection-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .collection-image {
+        height: 110px;
+    }
+
+    .collection-item-title {
+        font-size: 1rem;
+    }
+
+    .collection-description {
+        font-size: 0.9rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .contact-button {
+        padding: 10px 15px;
+    }
+}
