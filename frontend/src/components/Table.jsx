@@ -6,7 +6,11 @@ import "./Table.css";
 const API_URL = process.env.REACT_APP_API_URL;
 
 // Connect to Socket.io Server
-const socket = io(API_URL);
+const socket = io(API_URL, {
+  transports: ["websocket", "polling"], // Ensures it works on Vercel
+  withCredentials: true,
+});
+
 
 // Debounce Hook (Delays API call until user stops typing)
 const useDebounce = (value, delay) => {

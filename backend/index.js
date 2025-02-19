@@ -13,20 +13,29 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "https://postpaid-mu.vercel.app",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: "*", // Allow all origins or specify frontend
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
-  }
+  },
+  transports: ["websocket", "polling"], // Ensure compatibility
 });
 
 
+
 app.use(express.json());
-app.use(cors({
-  origin: ["https://postpaid-mu.vercel.app"], // Allow your frontend domain
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}));
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // Allow all origins or specify frontend
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization");
+  
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 
 
 // Connect to MongoDB
