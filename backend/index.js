@@ -6,26 +6,25 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins or specify frontend
+    origin: "*",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
   },
-  transports: ["websocket", "polling"], // Ensure compatibility
+  transports: ["websocket", "polling"],
 });
 
+app.use(express.json({ limit: "20mb" })); // Increase JSON payload limit
+app.use(express.urlencoded({ extended: true }));
 
-
-app.use(express.json());
+// Middleware for CORS
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*"); // Allow all origins or specify frontend
+  res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization");
   
@@ -35,8 +34,6 @@ app.use((req, res, next) => {
   
   next();
 });
-
-
 
 // Connect to MongoDB
 mongoose
@@ -54,41 +51,29 @@ const DataSchema = new mongoose.Schema({
 
 const DataModel = mongoose.model("Data", DataSchema);
 
-// Multer Storage Setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = "uploads/";
-    if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath);
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename
-  },
-});
-
+// ✅ Use Memory Storage Instead of Disk Storage
+const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB Limit
 
 // 🟢 Upload & Process Excel File
-// 🟢 Upload & Process Excel File
 app.post("/api/upload", upload.single("file"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-
-  const { type } = req.body;
-  if (!type) return res.status(400).json({ message: "Type is required" });
-
-  const filePath = req.file.path;
-
   try {
-    const workbook = xlsx.readFile(filePath);
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const { type } = req.body;
+    if (!type) return res.status(400).json({ message: "Type is required" });
+
+    // ✅ Read Excel File from Buffer Instead of File System
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const excelData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
     // Validate required fields
     if (!excelData.every((row) => row.Number)) {
-      throw new Error("Excel file must have 'Number' column");
+      throw new Error("Excel file must have a 'Number' column");
     }
 
-    // Fetch existing records in bulk to check status
+    // Fetch existing records in bulk
     const numbers = excelData.map((row) => row.Number);
     const existingRecords = await DataModel.find({ number: { $in: numbers } }).lean();
     const existingMap = new Map(existingRecords.map((doc) => [doc.number, doc.status]));
@@ -113,7 +98,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       };
     });
 
-    // Bulk Insert with Transaction
+    // ✅ Bulk Insert with Transaction
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
@@ -130,13 +115,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     res.status(200).json({ message: "✅ Data uploaded successfully!" });
   } catch (err) {
     res.status(500).json({ message: err.message });
-  } finally {
-    fs.unlink(filePath, (err) => {
-      if (err) console.error("❌ Failed to delete file:", err);
-    });
   }
 });
-
 
 // 🟢 Fetch Paginated Data
 app.get("/api/data", async (req, res) => {
@@ -150,26 +130,23 @@ app.get("/api/data", async (req, res) => {
       if (typeArray.length) query.type = { $in: typeArray };
     }
 
-    // If `startWith` is provided, find numbers that start with it
+    // Filter by startWith or search
     if (startWith) {
-      query.number = new RegExp(`^${startWith}`, "i"); // Matches numbers starting with input
+      query.number = new RegExp(`^${startWith}`, "i");
     }
-
-    // If `search` is provided, find numbers that contain it
     if (search) {
-      query.number = new RegExp(search, "i"); // Matches numbers containing input
+      query.number = new RegExp(search, "i");
     }
 
-    // If both `startWith` and `search` are provided, refine the query
     if (startWith && search) {
       query.number = { $regex: `^${startWith}.*${search}`, $options: "i" };
     }
 
-    // ✅ Apply Date Filter (Ensure filtering by selected date)
+    // ✅ Apply Date Filter
     if (date) {
       const startDate = new Date(date);
       const endDate = new Date(date);
-      endDate.setHours(23, 59, 59, 999); // Get the full day range
+      endDate.setHours(23, 59, 59, 999);
       query.submissionDate = { $gte: startDate, $lte: endDate };
     }
 
@@ -185,10 +162,7 @@ app.get("/api/data", async (req, res) => {
   }
 });
 
-
-
-
-// 🟢 Update Status of a Record
+// 🟢 Update Status
 app.put("/api/data/:id", async (req, res) => {
   try {
     const { type, status } = req.body;
@@ -209,7 +183,7 @@ app.put("/api/data/:id", async (req, res) => {
   }
 });
 
-// 🟢 Delete a Record
+// 🟢 Delete Record
 app.delete("/api/data/:id", async (req, res) => {
   try {
     const deletedData = await DataModel.findByIdAndDelete(req.params.id);
@@ -222,15 +196,6 @@ app.delete("/api/data/:id", async (req, res) => {
   }
 });
 
-// 🟢 Handle Socket.IO Connections
-io.on("connection", (socket) => {
-  console.log("⚡ Client connected:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
-  });
-});
-
-// Start the Server
+// Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
