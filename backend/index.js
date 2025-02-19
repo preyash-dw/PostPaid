@@ -23,17 +23,24 @@ app.use(express.json({ limit: "20mb" })); // Increase JSON payload limit
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware for CORS
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization");
-  
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
+const allowedOrigins = [
+  "https://postpaid-theta.vercel.app", // Your frontend on Vercel
+  "http://localhost:3000", // For local development
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true, // Allow cookies and auth headers
+}));
+
 
 // Connect to MongoDB
 mongoose
@@ -58,22 +65,20 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 1
 // 🟢 Upload & Process Excel File
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
+    res.setHeader("Cache-Control", "no-store"); // Avoid caching issues
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
     const { type } = req.body;
     if (!type) return res.status(400).json({ message: "Type is required" });
 
-    // ✅ Read Excel File from Buffer Instead of File System
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const excelData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    // Validate required fields
     if (!excelData.every((row) => row.Number)) {
       throw new Error("Excel file must have a 'Number' column");
     }
 
-    // Fetch existing records in bulk
     const numbers = excelData.map((row) => row.Number);
     const existingRecords = await DataModel.find({ number: { $in: numbers } }).lean();
     const existingMap = new Map(existingRecords.map((doc) => [doc.number, doc.status]));
@@ -85,20 +90,19 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       return {
         updateOne: {
           filter: { number: row.Number },
-          update: { 
-            $set: { 
-              number: row.Number, 
-              type, 
-              status: newStatus, 
-              submissionDate: new Date() 
-            } 
+          update: {
+            $set: {
+              number: row.Number,
+              type,
+              status: newStatus,
+              submissionDate: new Date(),
+            },
           },
           upsert: true,
         },
       };
     });
 
-    // ✅ Bulk Insert with Transaction
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
@@ -117,6 +121,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // 🟢 Fetch Paginated Data
 app.get("/api/data", async (req, res) => {
