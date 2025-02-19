@@ -58,6 +58,7 @@ const Add = ({ socket }) => {
       
     } catch (error) {
       alert("❌ Error: " + error.message);
+      console.log(error.message);
     } finally {
       setLoading(false);
     }
