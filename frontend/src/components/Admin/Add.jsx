@@ -6,32 +6,21 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const Add = ({ socket }) => {
   const [file, setFile] = useState(null);
-  const [type, setType] = useState("");
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
-
-  const typeOptions = [
-    "Standard",
-    "Silver",
-    "Silver Plus",
-    "Gold",
-    "Gold Plus",
-    "Platinum",
-  ];
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
   const handleSubmit = async () => {
-    if (!file || !type) {
-      alert("Please select a file and type.");
+    if (!file) {
+      alert("Please select a file.");
       return;
     }
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("type", type);
 
     setLoading(true);
 
@@ -49,12 +38,9 @@ const Add = ({ socket }) => {
 
       alert("✅ File uploaded successfully!");
       setFile(null);
-      setType("");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-
-   
       
     } catch (error) {
       alert("❌ Error: " + error.message);
@@ -71,16 +57,6 @@ const Add = ({ socket }) => {
       <div className="add-form">
         <label>File:</label>
         <input type="file" accept=".xlsx, .xls" onChange={handleFileChange} ref={fileInputRef} />
-
-        <label>Type:</label>
-        <select value={type} onChange={(e) => setType(e.target.value)}>
-          <option value="">Select Type</option>
-          {typeOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
 
         <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
           {loading ? "Uploading..." : "Upload"}

@@ -84,8 +84,6 @@ const Second = () => {
                 ))}
               </ul>
               <button className="contact-button">Contact Us</button>
-              
-      <ContactModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             </>
           )}
 

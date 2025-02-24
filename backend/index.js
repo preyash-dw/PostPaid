@@ -19,13 +19,13 @@ const io = new Server(server, {
   transports: ["websocket", "polling"],
 });
 
-app.use(express.json({ limit: "20mb" })); // Increase JSON payload limit
+app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Middleware for CORS
 const allowedOrigins = [
-  "https://postpaid-theta.vercel.app", // Your frontend on Vercel
-  "http://localhost:3000", // For local development
+  "https://postpaid-theta.vercel.app",
+  "http://localhost:3000", 
 ];
 
 app.use(cors({
@@ -38,21 +38,21 @@ app.use(cors({
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // Allow cookies and auth headers
+  credentials: true, 
 }));
 
 
-// Connect to MongoDB
+
 mongoose
   .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// Define Mongoose Schema
+
 const DataSchema = new mongoose.Schema({
   number: { type: String, required: true, unique: true, index: true },
   type: { type: String, required: true },
-  status: { type: String, required: true }, // "Booked" or date
+  status: { type: String, required: true }, 
   submissionDate: { type: Date, default: Date.now, index: true },
 });
 
@@ -65,11 +65,8 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 1
 // 🟢 Upload & Process Excel File
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
-    res.setHeader("Cache-Control", "no-store"); // Avoid caching issues
+    res.setHeader("Cache-Control", "no-store");
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-
-    const { type } = req.body;
-    if (!type) return res.status(400).json({ message: "Type is required" });
 
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
@@ -83,9 +80,20 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const existingRecords = await DataModel.find({ number: { $in: numbers } }).lean();
     const existingMap = new Map(existingRecords.map((doc) => [doc.number, doc.status]));
 
+    const todayDate = new Date();
+
     const bulkOps = excelData.map((row) => {
-      const existingStatus = existingMap.get(row.Number);
-      const newStatus = row.Status?.trim() || existingStatus || new Date();
+      let extractedType = row.status?.trim() || row.Status?.trim();
+
+      // ✅ Handle Empty Status - Default to "Standard"
+      if (!extractedType) extractedType = "Standard";
+
+      // ✅ Convert to Title Case for Consistency
+      extractedType = extractedType
+        .toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
 
       return {
         updateOne: {
@@ -93,9 +101,9 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
           update: {
             $set: {
               number: row.Number,
-              type,
-              status: newStatus,
-              submissionDate: new Date(),
+              type: extractedType,
+              status: todayDate,
+              submissionDate: todayDate,
             },
           },
           upsert: true,
@@ -115,12 +123,16 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       session.endSession();
     }
 
-    io.emit("dataUpdated");
+    io.emit("dataUpdated", { message: "Data was updated", timestamp: new Date() });
+
+
     res.status(200).json({ message: "✅ Data uploaded successfully!" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
+
 
 
 // 🟢 Fetch Paginated Data

@@ -8,6 +8,12 @@ import ContactModal from "./ContactModal.jsx";
 const Main = () => {
   const tableRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+ 
+  const handleOpenModal = () => {
+    console.log("Opening modal...");
+    setIsModalOpen(true);
+  };
+  
 
   const scrollToTable = () => {
     tableRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,7 +33,7 @@ const Main = () => {
             </button>
             <button
               className="main-contact-button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleOpenModal}
             >
               Contact Us
             </button>

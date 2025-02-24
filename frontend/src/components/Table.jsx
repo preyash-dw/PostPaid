@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import io from "socket.io-client";
 import "./Table.css";
 
@@ -10,7 +10,6 @@ const socket = io(API_URL, {
   transports: ["websocket", "polling"], // Ensures it works on Vercel
   withCredentials: true,
 });
-
 
 // Debounce Hook (Delays API call until user stops typing)
 const useDebounce = (value, delay) => {
@@ -42,43 +41,50 @@ const Table = () => {
   const debouncedSearch = useDebounce(search, 500);
   const debouncedStartWith = useDebounce(startWith, 500);
 
-  // Caching API responses
-  const cache = new Map();
+  // Store cache in a ref so it persists across renders
+  const cache = useRef(new Map());
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const cacheKey = `${page}-${limit}-${debouncedSearch}-${debouncedStartWith}-${selectedTypes.join(",")}-${selectedDate}`;
+  const fetchData = useCallback(
+    async (forceUpdate = false) => {
+      try {
+        setLoading(true);
+        const cacheKey = `${page}-${limit}-${debouncedSearch}-${debouncedStartWith}-${selectedTypes.join(",")}-${selectedDate}`;
 
-      if (cache.has(cacheKey)) {
-        setData(cache.get(cacheKey));
+        if (forceUpdate) {
+          cache.current.clear();
+        }
+
+        if (!forceUpdate && cache.current.has(cacheKey)) {
+          setData(cache.current.get(cacheKey));
+          setLoading(false);
+          return;
+        }
+
+        const queryParams = new URLSearchParams({
+          page,
+          limit,
+          search: debouncedSearch,
+          startWith: debouncedStartWith,
+          type: selectedTypes.join(","),
+          date: selectedDate,
+        });
+
+        const response = await fetch(`${API_URL}/api/data?${queryParams}`);
+        if (!response.ok) throw new Error("Failed to fetch data");
+
+        const result = await response.json();
+        cache.current.set(cacheKey, result.data);
+
+        setData(result.data);
+        setTotal(result.total);
         setLoading(false);
-        return;
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
       }
-
-      const queryParams = new URLSearchParams({
-        page,
-        limit,
-        search: debouncedSearch,
-        startWith: debouncedStartWith,
-        type: selectedTypes.join(","),
-        date: selectedDate,
-      });
-
-      const response = await fetch(`${API_URL}/api/data?${queryParams}`);
-      if (!response.ok) throw new Error("Failed to fetch data");
-
-      const result = await response.json();
-      cache.set(cacheKey, result.data);
-
-      setData(result.data);
-      setTotal(result.total);
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
+    },
+    [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]
+  );
 
   useEffect(() => {
     setPage(1);
@@ -86,13 +92,24 @@ const Table = () => {
 
   useEffect(() => {
     fetchData();
-  }, [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]);
+  }, [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate, fetchData]);
 
-  // Listen for real-time updates
   useEffect(() => {
-    socket.on("dataUpdated", fetchData);
-    return () => socket.off("dataUpdated", fetchData);
-  }, []);
+    const handleDataUpdate = (data) => {
+      console.log("🔄 Data updated via socket:", data);
+      fetchData(true); // Force update to fetch new data
+    };
+
+    socket.on("connect", () => console.log("Connected to Socket.io server"));
+    socket.on("disconnect", () => console.log("Disconnected from Socket.io server"));
+    socket.on("dataUpdated", handleDataUpdate);
+
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("dataUpdated", handleDataUpdate);
+    };
+  }, [fetchData]);
 
   const toggleType = (type) => {
     setSelectedTypes((prev) =>
