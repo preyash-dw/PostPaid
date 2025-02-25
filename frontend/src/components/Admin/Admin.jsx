@@ -38,8 +38,10 @@ function Admin() {
         <div className="dashboard">
           <h1>Welcome Admin</h1>
           <div className="options">
-            <NavLink to="/admin/update" className="option">Update</NavLink>
+          <NavLink to="/admin/view" className="option">View</NavLink>
+            
             <NavLink to="/admin/add" className="option">Add New</NavLink>
+
           </div>
           <div className="content-area">
             <Outlet />

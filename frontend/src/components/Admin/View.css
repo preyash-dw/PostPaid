@@ -1,0 +1,261 @@
+.view-table-container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+  }
+  
+  .view-table-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .view-table-buttons button {
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(to bottom, #4299e1, #7f59ca);
+    color: white;
+    border-radius: 20px;
+    transition: background 0.3s;
+  }
+  
+  .view-table-buttons button.view-selected {
+    background: #0056b3;
+  }
+  
+  .view-table-buttons button:hover {
+    background: #0056b3;
+  }
+  
+  .view-search-section {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .view-search-box,
+  .view-limit-box {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+  }
+  
+  .view-search-box {
+    width: 200px;
+  }
+  
+  .view-limit-box {
+    display: none;
+    width: 60px;
+  }
+  
+  .view-search-box:focus,
+  .view-limit-box:focus {
+    background: linear-gradient(to bottom, #aed6f7, #bda3f3);
+  }
+  
+  .view-table {
+    width: 90%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    margin-left: 2rem;
+  }
+  
+  .view-table-head th,
+  .view-table-body td {
+    border: 1px solid #ddd;
+    padding: 10px;
+  }
+  
+  .view-table-head th {
+    background: linear-gradient(to bottom, #4299e1, #7f59ca);
+    color: white;
+  }
+  
+  .view-table-body tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  .view-table-body tr:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .view-pagination {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    margin-top: 15px;
+    margin-left: 2rem;
+  }
+  
+  .view-pagination button {
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+  
+  .view-pagination button:hover {
+    background: #0056b3;
+  }
+  
+  .view-pagination button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  .view-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .view-modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+  }
+  
+  .view-modal-content h3 {
+    margin-bottom: 15px;
+  }
+  
+  .view-modal-content label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+  }
+  
+  .view-modal-content input,
+  .view-modal-content select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .view-modal-content button {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .update-btn {
+    background: #28a745;
+    color: white;
+  }
+  
+  .view-modal-content .delete-btn {
+    background: #dc3545;
+    color: white;
+  }
+  
+  .view-modal-content button:last-child {
+    background: #6c757d;
+    color: white;
+  }
+  
+  .view-modal-content p {
+    margin-top: 10px;
+    color: #28a745;
+    font-weight: bold;
+  }
+  
+  
+  @media (max-width: 768px) {
+    .view-table {
+      margin-left: 0.1rem;
+    }
+  
+    .view-pagination {
+      margin-left: 0.1rem;
+    }
+  
+    .view-table-buttons {
+      width: 96%;
+      margin-left: -3%;
+    }
+  
+    .view-search-section {
+      margin-left: -1.5rem;
+    }
+  }
+  
+  @media (max-width: 468px) {
+    .view-table {
+      margin-left: 0.1rem;
+    }
+  
+    .view-pagination {
+      margin-left: 0.1rem;
+    }
+  
+    .view-search-section {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      align-items: center;
+      gap: 5px;
+      margin-left: 0;
+    }
+  
+    .view-search-box,
+    .view-limit-box {
+      width: 70%;
+    }
+  
+    .view-search-box:nth-child(3) {
+      margin-top: 10px;
+    }
+  }
+  @media (max-width: 480px) {
+    .view-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 90%;
+      }
+    .view-modal-content {
+      width: 90%;
+      padding: 15px;
+    }
+  
+    .view-modal-content h3 {
+      font-size: 18px;
+    }
+  
+    .view-modal-content label {
+      font-size: 12px;
+    }
+  
+    .view-modal-content input,
+    .view-modal-content select {
+      font-size: 12px;
+      padding: 8px;
+    }
+  
+    .view-modal-content button {
+      font-size: 12px;
+      padding: 8px;
+    }
+  }

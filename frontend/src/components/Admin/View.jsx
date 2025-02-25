@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import io from "socket.io-client";
-import "./Table.css";
+import axios from "axios";
+import "./View.css";
 
-// Get API URL from environment variables
 const API_URL = process.env.REACT_APP_API_URL;
 
-// Connect to Socket.io Server
 const socket = io(API_URL, {
-  transports: ["websocket", "polling"], // Ensures it works on Vercel
+  transports: ["websocket", "polling"],
   withCredentials: true,
 });
 
-// Debounce Hook (Delays API call until user stops typing)
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -26,7 +24,7 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
-const Table = () => {
+const View = () => {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [startWith, setStartWith] = useState("");
@@ -38,10 +36,15 @@ const Table = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [updateType, setUpdateType] = useState("");
+  const [updateStatus, setUpdateStatus] = useState("false");
+  const [updateMessage, setUpdateMessage] = useState("");
+
   const debouncedSearch = useDebounce(search, 500);
   const debouncedStartWith = useDebounce(startWith, 500);
 
-  // Store cache in a ref so it persists across renders
   const cache = useRef(new Map());
 
   const fetchData = useCallback(
@@ -93,17 +96,16 @@ const Table = () => {
   useEffect(() => {
     fetchData();
   }, [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate, fetchData]);
-  
+
   useEffect(() => {
     if (selectedTypes.length === 0) {
-      fetchData(true); // Fetch data only when selectedTypes is fully updated
+      fetchData(true);
     }
   }, [selectedTypes, fetchData]);
-  
+
   useEffect(() => {
-    const handleDataUpdate = (data) => {
-      console.log("🔄 Data updated via socket:", data);
-      fetchData(true); // Force update to fetch new data
+    const handleDataUpdate = () => {
+      fetchData(true);
     };
 
     socket.on("connect", () => console.log("Connected to Socket.io server"));
@@ -129,14 +131,60 @@ const Table = () => {
     return !isNaN(date) ? date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Invalid Date";
   };
 
+  const openModal = (item) => {
+    setSelectedItem(item);
+    setUpdateType(item.type);
+    setUpdateStatus(item.status === "Booked" ? "true" : "false");
+    setModalOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!selectedItem) return;
+
+    setUpdateMessage("Updating...");
+
+    try {
+      await axios.put(`${API_URL}/api/data/${selectedItem._id}`, {
+        type: updateType,
+        status: updateStatus === "true" ? "Booked" : new Date().toDateString(),
+      });
+
+      setUpdateMessage("✅ Data updated successfully!");
+      setModalOpen(false);
+      setUpdateMessage("");
+      fetchData(true);
+    } catch (error) {
+      setUpdateMessage("❌ Error updating data.");
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedItem) return;
+
+    setUpdateMessage("Deleting...");
+
+    try {
+      await axios.delete(`${API_URL}/api/data/${selectedItem._id}`);
+
+      setUpdateMessage("✅ Data deleted successfully!");
+      setModalOpen(false);
+      setUpdateMessage("");
+      fetchData(true);
+    } catch (error) {
+      setUpdateMessage("❌ Error deleting data.");
+      console.error(error);
+    }
+  };
+
   return (
-    <div className="table-container">
-      <div className="table-buttons">
+    <div className="view-table-container">
+        <div className="view-table-buttons">
         {["Standard", "Silver", "Silver Plus", "Gold", "Gold Plus", "Platinum"].map((type) => (
           <button
             key={type}
             onClick={() => toggleType(type)}
-            className={selectedTypes.includes(type) ? "selected" : ""}
+            className={selectedTypes.includes(type) ? "view-selected" : ""}
           >
             {type}
           </button>
@@ -144,13 +192,13 @@ const Table = () => {
         <button onClick={() => setSelectedTypes([])}>Clear All</button>
       </div>
 
-      <div className="search-section">
+      <div className="view-search-section">
         <input
           type="number"
           placeholder="Start with..."
           value={startWith}
           onChange={(e) => setStartWith(e.target.value)}
-          className="search-box"
+          className="view-search-box"
         />
 
         <input
@@ -158,14 +206,14 @@ const Table = () => {
           placeholder="Search by number"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="search-box"
+          className="view-search-box"
         />
 
         <input
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="search-box"
+          className="view-search-box"
         />
         <input
           type="number"
@@ -173,11 +221,10 @@ const Table = () => {
           min="50"
           max="100"
           onChange={(e) => setLimit(Number(e.target.value))}
-          className="limit-box"
+          className="view-limit-box"
         />
       </div>
-
-      <table>
+      <table className="view-table">
         <thead>
           <tr>
             <th>Mobile Number</th>
@@ -188,14 +235,14 @@ const Table = () => {
         <tbody>
           {loading
             ? [...Array(limit)].map((_, i) => (
-                <tr key={i} className="loading-row">
+                <tr key={i}>
                   <td>Loading...</td>
                   <td>Loading...</td>
                   <td>Loading...</td>
                 </tr>
               ))
             : data.map((item) => (
-                <tr key={item._id}>
+                <tr key={item._id} onClick={() => openModal(item)}>
                   <td>{item.number}</td>
                   <td>{item.type}</td>
                   <td>{formatStatus(item.status)}</td>
@@ -204,17 +251,37 @@ const Table = () => {
         </tbody>
       </table>
 
-      <div className="pagination">
-        <button disabled={page === 1} onClick={() => setPage(page - 1)} className="prev-button">
-          Prev
-        </button>
-        <span>Page {page} of {Math.ceil(total / limit)}</span>
-        <button disabled={page * limit >= total} onClick={() => setPage(page + 1)} className="next-button">
-          Next
-        </button>
-      </div>
+      {modalOpen && selectedItem && (
+        <div className="view-modal">
+          <div className="view-modal-content">
+            <h3>Update Record</h3>
+
+            <label>Number:</label>
+            <input type="text" value={selectedItem.number} readOnly />
+
+            <label>Type:</label>
+            <select value={updateType} onChange={(e) => setUpdateType(e.target.value)}>
+              {["Standard", "Silver", "Silver Plus", "Gold", "Gold Plus", "Platinum"].map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+
+            <label>Status:</label>
+            <select value={updateStatus} onChange={(e) => setUpdateStatus(e.target.value)}>
+              <option value="false">Not Booked</option>
+              <option value="true">Booked</option>
+            </select>
+
+            <button onClick={handleUpdate} className="update-btn">Update</button>
+            <button onClick={handleDelete} className="delete-btn">Delete</button>
+            <button onClick={() => setModalOpen(false)}>Close</button>
+
+            {updateMessage && <p>{updateMessage}</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default Table;
+export default View;

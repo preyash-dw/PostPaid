@@ -89,12 +89,11 @@
     margin-top: 1rem;
     width: 100%;
     max-width: 97%;
-    
+    overflow: hidden;
     border-radius: 10px;
     background: white;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-    background: #1e1e2f;
-    padding: 20px;
+   
 }
 
 /* RESPONSIVENESS */
