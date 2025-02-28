@@ -84,9 +84,18 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     const bulkOps = excelData.map((row) => {
       let extractedType = row.status?.trim() || row.Status?.trim();
+      let extractedStatus = row.REMARKS?.trim() || row.Remarks?.trim(); // Default if empty
+
 
       // ✅ Handle Empty Status - Default to "Standard"
       if (!extractedType) extractedType = "Standard";
+      if(!extractedStatus) extractedStatus=todayDate;
+      
+
+      if (extractedStatus.toLowerCase() === "booked") {
+        extractedStatus = "Booked";
+      }
+      
 
       // ✅ Convert to Title Case for Consistency
       extractedType = extractedType
@@ -102,7 +111,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
             $set: {
               number: row.Number,
               type: extractedType,
-              status: todayDate,
+              status: extractedStatus,
               submissionDate: todayDate,
             },
           },
