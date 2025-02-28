@@ -213,6 +213,17 @@ app.delete("/api/data/:id", async (req, res) => {
   }
 });
 
+app.post("/api/data/bulk-delete", async (req, res) => {
+  try {
+    const { ids } = req.body;
+    await DataModel.deleteMany({ _id: { $in: ids } });
+    res.json({ message: "Deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting records" });
+  }
+});
+
+
 // Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

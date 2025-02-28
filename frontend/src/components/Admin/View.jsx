@@ -41,6 +41,7 @@ const View = () => {
   const [updateType, setUpdateType] = useState("");
   const [updateStatus, setUpdateStatus] = useState("false");
   const [updateMessage, setUpdateMessage] = useState("");
+  const [selectedRows, setSelectedRows] = useState([]);
 
   const debouncedSearch = useDebounce(search, 500);
   const debouncedStartWith = useDebounce(startWith, 500);
@@ -176,6 +177,36 @@ const View = () => {
       console.error(error);
     }
   };
+  const toggleRowSelection = (id) => {
+    setSelectedRows((prev) =>
+      prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
+    );
+  };
+  
+  const toggleSelectAll = () => {
+    if (selectedRows.length === data.length) {
+      setSelectedRows([]);
+    } else {
+      setSelectedRows(data.map((item) => item._id));
+    }
+  };
+  
+  const handleBulkDelete = async () => {
+    if (selectedRows.length === 0) return;
+    
+    setUpdateMessage("Deleting selected records...");
+  
+    try {
+      await axios.post(`${API_URL}/api/data/bulk-delete`, { ids: selectedRows });
+  
+      setUpdateMessage("✅ Selected records deleted successfully!");
+      setSelectedRows([]);
+      fetchData(true);
+    } catch (error) {
+      setUpdateMessage("❌ Error deleting records.");
+      console.error(error);
+    }
+  };
 
   return (
     <div className="view-table-container">
@@ -223,6 +254,10 @@ const View = () => {
           onChange={(e) => setLimit(Number(e.target.value))}
           className="view-limit-box"
         />
+        <button onClick={handleBulkDelete} disabled={selectedRows.length === 0} className="bulk-delete-btn">
+  Delete Selected
+</button>
+
       </div>
       <table className="view-table">
         <thead>
@@ -230,6 +265,9 @@ const View = () => {
             <th>Mobile Number</th>
             <th>Type</th>
             <th>Availability</th>
+            <th>
+      <input type="checkbox" onChange={toggleSelectAll} checked={selectedRows.length === data.length} />
+    </th>
           </tr>
         </thead>
         <tbody>
@@ -242,14 +280,32 @@ const View = () => {
                 </tr>
               ))
             : data.map((item) => (
-                <tr key={item._id} onClick={() => openModal(item)}>
-                  <td>{item.number}</td>
-                  <td>{item.type}</td>
-                  <td>{formatStatus(item.status)}</td>
+                <tr key={item._id} >
+                  <td onClick={() => openModal(item)}>{item.number}</td>
+                  <td onClick={() => openModal(item)}>{item.type}</td>
+                  <td onClick={() => openModal(item)}>{formatStatus(item.status)}</td>
+                  <td>
+        <input
+          type="checkbox"
+          checked={selectedRows.includes(item._id)}
+          onChange={() => toggleRowSelection(item._id)}
+        />
+      </td>
                 </tr>
               ))}
         </tbody>
       </table>
+      <div className="view-pagination">
+        <button disabled={page === 1} onClick={() => setPage(page - 1)} className="view-prev-button">
+          Prev
+        </button>
+        <span className="view-page-info">
+          Page {page} of {Math.ceil(total / limit)}
+        </span>
+        <button disabled={page * limit >= total} onClick={() => setPage(page + 1)} className="view-next-button">
+          Next
+        </button>
+      </div>
 
       {modalOpen && selectedItem && (
         <div className="view-modal">

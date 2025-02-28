@@ -60,6 +60,17 @@
   .view-limit-box:focus {
     background: linear-gradient(to bottom, #aed6f7, #bda3f3);
   }
+
+  .bulk-delete-btn{
+    padding: 10px 30px;
+   
+    border: none;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border-radius: 12px;
+    transition: background 0.3s;
+  }
   
   .view-table {
     width: 90%;
@@ -203,6 +214,9 @@
   }
   
   @media (max-width: 468px) {
+    .bulk-delete-btn{
+      width: 85%;
+    }
     .view-table {
       margin-left: 0.1rem;
     }
