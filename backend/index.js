@@ -218,6 +218,7 @@ app.post("/api/data/bulk-delete", async (req, res) => {
     const { ids } = req.body;
     await DataModel.deleteMany({ _id: { $in: ids } });
     res.json({ message: "Deleted successfully" });
+    io.emit("dataUpdated");
   } catch (error) {
     res.status(500).json({ message: "Error deleting records" });
   }
