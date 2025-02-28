@@ -181,8 +181,8 @@ const Table = () => {
         <thead>
           <tr>
             <th>Mobile Number</th>
-            <th>Type</th>
-            <th>Availability</th>
+            <th>Status</th>
+            <th>Remarks</th>
           </tr>
         </thead>
         <tbody>

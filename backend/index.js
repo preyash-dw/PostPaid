@@ -84,26 +84,46 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     const bulkOps = excelData.map((row) => {
       let extractedType = row.status?.trim() || row.Status?.trim();
-      let extractedStatus = row.REMARKS?.trim() || row.Remarks?.trim(); // Default if empty
-
-
-      // ✅ Handle Empty Status - Default to "Standard"
-      if (!extractedType) extractedType = "Standard";
-      if(!extractedStatus) extractedStatus=todayDate;
-      
-
+      let extractedStatus = row.REMARKS ?? ""; // Handle undefined, null, etc.
+    
+      const today = new Date();
+      const formattedToday = today.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+    
+      // ✅ Convert non-string values to string for consistency
+      extractedStatus = String(extractedStatus).trim();
+    
+      // ✅ If "Booked" (in any case), set to "Booked"
       if (extractedStatus.toLowerCase() === "booked") {
         extractedStatus = "Booked";
       }
-      
-
-      // ✅ Convert to Title Case for Consistency
+      // ✅ If empty, set to today's date (formatted as DD-MMM)
+      else if (!extractedStatus) {
+        extractedStatus = formattedToday;
+      }
+      // ✅ If a date, convert it to "DD-MMM" format correctly
+      else {
+        const parsedDate = new Date(extractedStatus);
+    
+        // 🔥 **Fix for Excel Numeric Dates**
+        if (!isNaN(extractedStatus) && extractedStatus > 40000) {
+          parsedDate.setTime((extractedStatus - 25569) * 86400 * 1000); // Convert from Excel date
+        }
+    
+        if (!isNaN(parsedDate)) {
+          extractedStatus = parsedDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+        }
+      }
+    
+      // ✅ Handle Empty Status - Default to "Standard"
+      if (!extractedType) extractedType = "Standard";
+    
+      // ✅ Convert `type` to Title Case for consistency
       extractedType = extractedType
         .toLowerCase()
         .split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
-
+    
       return {
         updateOne: {
           filter: { number: row.Number },
@@ -112,13 +132,15 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
               number: row.Number,
               type: extractedType,
               status: extractedStatus,
-              submissionDate: todayDate,
+              submissionDate: today,
             },
           },
           upsert: true,
         },
       };
     });
+    
+    
 
     const session = await mongoose.startSession();
     session.startTransaction();
