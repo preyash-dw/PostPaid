@@ -24,8 +24,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware for CORS
 const allowedOrigins = [
-  "https://postpaid-theta.vercel.app",
-  "http://localhost:3000", 
+  "https://postpaid-phi.vercel.app",
+  "http://localhost:3000",
 ];
 
 app.use(cors({
