@@ -163,6 +163,15 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+app.get("/api/data/initial", async (req, res) => {
+  try {
+    const data = await DataModel.find().sort({ submissionDate: -1 }).limit(50);
+    res.status(200).json({ data, total: 50 });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 
 

@@ -37,7 +37,7 @@ const Table = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const debouncedSearch = useDebounce(search, 500);
   const debouncedStartWith = useDebounce(startWith, 500);
 
@@ -60,16 +60,23 @@ const Table = () => {
           return;
         }
 
-        const queryParams = new URLSearchParams({
-          page,
-          limit,
-          search: debouncedSearch,
-          startWith: debouncedStartWith,
-          type: selectedTypes.join(","),
-          date: selectedDate,
-        });
+        let url;
+        if (isFirstLoad) {
+          url = `${API_URL}/api/data/initial`;
+          setIsFirstLoad(false);
+        } else {
+          const queryParams = new URLSearchParams({
+            page,
+            limit,
+            search: debouncedSearch,
+            startWith: debouncedStartWith,
+            type: selectedTypes.join(","),
+            date: selectedDate,
+          });
+          url = `${API_URL}/api/data?${queryParams}`;
+        }
 
-        const response = await fetch(`${API_URL}/api/data?${queryParams}`);
+        const response = await fetch(url);
         if (!response.ok) throw new Error("Failed to fetch data");
 
         const result = await response.json();
@@ -83,7 +90,7 @@ const Table = () => {
         setLoading(false);
       }
     },
-    [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]
+    [isFirstLoad,page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]
   );
 
   useEffect(() => {
