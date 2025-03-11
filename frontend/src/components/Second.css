@@ -27,6 +27,7 @@
 
 .collection-item {
     border-radius: 10px;
+    max-width: 250px;
     text-align: left;
     cursor: pointer;
     transition: transform 0.3s ease-in-out;
