@@ -187,6 +187,21 @@ app.post("/api/data/bulk-delete", async (req, res) => {
     res.status(500).json({ message: "Error deleting records" });
   }
 });
+// ✅ Delete Single Record
+app.delete("/api/data/:id", async (req, res) => {
+  try {
+    const deletedData = await DataModel.findByIdAndDelete(req.params.id);
+    if (!deletedData) {
+      return res.status(404).json({ message: "Data not found" });
+    }
+
+    io.emit("dataUpdated");
+    res.status(200).json({ message: "✅ Data deleted successfully!" });
+  } catch (err) {
+    res.status(500).json({ message: "❌ Error deleting data.", error: err.message });
+  }
+});
+
 
 
 
