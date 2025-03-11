@@ -1,0 +1,149 @@
+.collection-form-container {
+    /* max-width: 600px; */
+    /* margin: 50px auto; */
+    margin-left: 10px;
+    border-radius: 12px;
+    font-family: "Arial", sans-serif;
+  }
+  
+  h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  /* Grid layout for form fields */
+  .collection-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 15px;
+  }
+  
+  .collection-form-field {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .collection-form-field label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #444;
+  }
+  
+  .collection-form-field input,
+  .collection-form-field textarea,
+  .collection-form-field select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease-in-out;
+    width: 90%;
+  }
+  
+  .collection-form-field input:focus,
+  .collection-form-field textarea:focus,
+  .collection-form-field select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+  }
+  
+  /* Feature input & button styling */
+  .feature-input-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .feature-input-container input {
+    flex-grow: 1;
+  }
+  
+  .feature-input-container button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease-in-out;
+  }
+  
+  .feature-input-container button:hover {
+    background: #0056b3;
+  }
+  
+  /* Feature list styling */
+  .feature-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+  }
+  
+  .feature-list li {
+    display: flex;
+    justify-content: space-between;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+  
+  .feature-list button {
+    background: none;
+    border: none;
+    color: red;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .feature-list button:hover {
+    color: darkred;
+  }
+  
+/* Center align the button */
+.submit-btn-container {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 30px;
+}
+
+/* Style the submit button */
+button[type="submit"] {
+    background: #28a745;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    /* padding: 12px 20px; */
+    transition: background 0.3s ease-in-out;
+    width: 90%;
+    height: 5vh; 
+    text-align: center;
+    font-weight: bold;
+}
+
+/* Hover effect */
+button[type="submit"]:hover {
+    background: #218838;
+}
+
+  
+  /* Responsive adjustments */
+  @media (max-width: 600px) {
+    .collection-form-container {
+      width: 90%;
+      padding: 15px;
+    }
+    .collection-form-grid {
+      grid-template-columns: 1fr;
+    }
+    .submit-btn-container{
+        margin-top: 0px;
+    }
+  }
+  

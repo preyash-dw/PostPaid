@@ -41,7 +41,8 @@ function Admin() {
           <NavLink to="/admin/view" className="option">View</NavLink>
             
             <NavLink to="/admin/add" className="option">Add New</NavLink>
-
+            <NavLink to="/admin/collection" className="option">Collection</NavLink>
+            <NavLink to="/admin/viewcollection" className="option">View Collection</NavLink>
           </div>
           <div className="content-area">
             <Outlet />

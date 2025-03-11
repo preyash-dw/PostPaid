@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 const express = require("express");
 const http = require("http");
@@ -6,6 +7,7 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const cors = require("cors");
+const compression = require("compression");
 
 const app = express();
 const server = http.createServer(app);
@@ -19,13 +21,14 @@ const io = new Server(server, {
   transports: ["websocket", "polling"],
 });
 
+app.use(compression()); // 🟢 Enable response compression
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware for CORS
 const allowedOrigins = [
   "https://postpaid-phi.vercel.app",
   "http://localhost:3000",
+  "https://genialemarketing.in",
 ];
 
 app.use(cors({
@@ -41,18 +44,17 @@ app.use(cors({
   credentials: true, 
 }));
 
-
-
+// ✅ Optimized MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-
+// ✅ Optimized Schema with Indexes
 const DataSchema = new mongoose.Schema({
   number: { type: String, required: true, unique: true, index: true },
-  type: { type: String, required: true },
-  status: { type: String, required: true }, 
+  type: { type: String, required: true, index: true },
+  status: { type: String, required: true, index: true },
   submissionDate: { type: Date, default: Date.now, index: true },
 });
 
@@ -62,7 +64,7 @@ const DataModel = mongoose.model("Data", DataSchema);
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB Limit
 
-// 🟢 Upload & Process Excel File
+// ✅ Optimized Upload & Process Excel File
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
     res.setHeader("Cache-Control", "no-store");
@@ -70,99 +72,54 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
-    const excelData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+    const stream = xlsx.stream.to_json(workbook.Sheets[sheetName], { raw: false });
 
-    if (!excelData.every((row) => row.Number)) {
-      throw new Error("Excel file must have a 'Number' column");
-    }
+    const bulkOps = [];
+    const today = new Date();
+    const formattedToday = today.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 
-    const numbers = excelData.map((row) => row.Number);
-    const existingRecords = await DataModel.find({ number: { $in: numbers } }).lean();
-    const existingMap = new Map(existingRecords.map((doc) => [doc.number, doc.status]));
+    stream.on("data", (row) => {
+      if (!row.Number) return;
 
-    const todayDate = new Date();
+      let extractedType = row.status?.trim() || row.Status?.trim() || "Standard";
+      let extractedStatus = String(row.REMARKS ?? "").trim();
 
-    const bulkOps = excelData.map((row) => {
-      let extractedType = row.status?.trim() || row.Status?.trim();
-      let extractedStatus = row.REMARKS ?? ""; // Handle undefined, null, etc.
-    
-      const today = new Date();
-      const formattedToday = today.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
-    
-      // ✅ Convert non-string values to string for consistency
-      extractedStatus = String(extractedStatus).trim();
-    
-      // ✅ If "Booked" (in any case), set to "Booked"
       if (extractedStatus.toLowerCase() === "booked") {
         extractedStatus = "Booked";
-      }
-      // ✅ If empty, set to today's date (formatted as DD-MMM)
-      else if (!extractedStatus) {
+      } else if (!extractedStatus) {
         extractedStatus = formattedToday;
-      }
-      // ✅ If a date, convert it to "DD-MMM" format correctly
-      else {
+      } else {
         const parsedDate = new Date(extractedStatus);
-    
-        // 🔥 **Fix for Excel Numeric Dates**
-        if (!isNaN(extractedStatus) && extractedStatus > 40000) {
-          parsedDate.setTime((extractedStatus - 25569) * 86400 * 1000); // Convert from Excel date
-        }
-    
         if (!isNaN(parsedDate)) {
           extractedStatus = parsedDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
         }
       }
-    
-      // ✅ Handle Empty Status - Default to "Standard"
-      if (!extractedType) extractedType = "Standard";
-    
-      // ✅ Convert `type` to Title Case for consistency
-      extractedType = extractedType
-        .toLowerCase()
-        .split(" ")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+
+      extractedType = extractedType.toLowerCase().split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
-    
-      return {
+
+      bulkOps.push({
         updateOne: {
           filter: { number: row.Number },
-          update: {
-            $set: {
-              number: row.Number,
-              type: extractedType,
-              status: extractedStatus,
-              submissionDate: today,
-            },
-          },
+          update: { $set: { number: row.Number, type: extractedType, status: extractedStatus, submissionDate: today } },
           upsert: true,
         },
-      };
+      });
     });
-    
-    
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
-      await DataModel.bulkWrite(bulkOps, { session });
-      await session.commitTransaction();
-    } catch (err) {
-      await session.abortTransaction();
-      throw err;
-    } finally {
-      session.endSession();
-    }
+    stream.on("end", async () => {
+      await DataModel.bulkWrite(bulkOps, { ordered: false }); // ✅ Faster Inserts
+      io.emit("dataUpdated");
+      res.status(200).json({ message: "✅ Data uploaded successfully!" });
+    });
 
-    io.emit("dataUpdated", { message: "Data was updated", timestamp: new Date() });
-
-
-    res.status(200).json({ message: "✅ Data uploaded successfully!" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
+// ✅ Fetch Initial Data
 app.get("/api/data/initial", async (req, res) => {
   try {
     const data = await DataModel.find().sort({ submissionDate: -1 }).limit(50);
@@ -172,34 +129,18 @@ app.get("/api/data/initial", async (req, res) => {
   }
 });
 
-
-
-
-// 🟢 Fetch Paginated Data
+// ✅ Optimized Paginated Data Fetch
 app.get("/api/data", async (req, res) => {
   try {
     const { page = 1, limit = 50, type, search, startWith, date } = req.query;
     const query = {};
 
-    // Handle multiple selected types
     if (type) {
-      const typeArray = type.split(",").filter((t) => t.trim());
-      if (typeArray.length) query.type = { $in: typeArray };
+      query.type = { $in: type.split(",").filter((t) => t.trim()) };
     }
+    if (startWith) query.number = new RegExp(`^${startWith}`, "i");
+    if (search) query.number = { $regex: `^${search}`, $options: "i" };
 
-    // Filter by startWith or search
-    if (startWith) {
-      query.number = new RegExp(`^${startWith}`, "i");
-    }
-    if (search) {
-      query.number = new RegExp(search, "i");
-    }
-
-    if (startWith && search) {
-      query.number = { $regex: `^${startWith}.*${search}`, $options: "i" };
-    }
-
-    // ✅ Apply Date Filter
     if (date) {
       const startDate = new Date(date);
       const endDate = new Date(date);
@@ -208,7 +149,7 @@ app.get("/api/data", async (req, res) => {
     }
 
     const total = await DataModel.countDocuments(query);
-    const data = await DataModel.find(query)
+    const data = await DataModel.find(query, { number: 1, type: 1, status: 1, submissionDate: 1 }) // ✅ Optimized Projection
       .sort({ submissionDate: -1 })
       .skip((page - 1) * Number(limit))
       .limit(Number(limit));
@@ -219,17 +160,13 @@ app.get("/api/data", async (req, res) => {
   }
 });
 
-// 🟢 Update Status
+// ✅ Update Status
 app.put("/api/data/:id", async (req, res) => {
   try {
     const { type, status } = req.body;
     if (!type || !status) return res.status(400).json({ message: "Type and Status are required" });
 
-    const updatedData = await DataModel.findByIdAndUpdate(
-      req.params.id,
-      { type, status },
-      { new: true }
-    );
+    const updatedData = await DataModel.findByIdAndUpdate(req.params.id, { type, status }, { new: true });
 
     if (!updatedData) return res.status(404).json({ message: "Data not found" });
 
@@ -240,29 +177,125 @@ app.put("/api/data/:id", async (req, res) => {
   }
 });
 
-// 🟢 Delete Record
-app.delete("/api/data/:id", async (req, res) => {
-  try {
-    const deletedData = await DataModel.findByIdAndDelete(req.params.id);
-    if (!deletedData) return res.status(404).json({ message: "Data not found" });
-
-    io.emit("dataUpdated");
-    res.status(200).json({ message: "✅ Data deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
+// ✅ Bulk Delete
 app.post("/api/data/bulk-delete", async (req, res) => {
   try {
-    const { ids } = req.body;
-    await DataModel.deleteMany({ _id: { $in: ids } });
-    res.json({ message: "Deleted successfully" });
+    await DataModel.deleteMany({ _id: { $in: req.body.ids } });
     io.emit("dataUpdated");
+    res.json({ message: "✅ Deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting records" });
   }
 });
+
+
+
+
+
+const CollectionSchema = new mongoose.Schema({
+  title: { type: String, required: true, trim: true },
+  description: { type: String, required: true, trim: true },
+  image: { type: String, required: true }, // Accepts URL from frontend
+  price: { type: Number, required: true, min: 0 },
+  features: { type: [String], required: true },
+});
+
+const CollectionModel = mongoose.model("Collection", CollectionSchema);
+
+// 🟢 **POST: Store Collection Data**
+app.post("/api/collections", async (req, res) => {
+  try {
+    let { title, description, image, price, features } = req.body;
+
+    // Validate input fields
+    if (!title || !description || !image || !price || !Array.isArray(features) || features.length === 0) {
+      return res.status(400).json({ message: "All fields are required & features must be an array" });
+    }
+
+    // Ensure price is a valid number
+    price = parseFloat(price);
+    if (isNaN(price) || price < 0) {
+      return res.status(400).json({ message: "Invalid price value" });
+    }
+
+    const newCollection = new CollectionModel({ title, description, image, price, features });
+    await newCollection.save();
+    io.emit("collectionUpdated");
+    res.status(201).json({ message: "✅ Collection item stored!", data: newCollection });
+    
+  } catch (error) {
+    res.status(500).json({ message: "❌ Error storing collection", error: error.message });
+  }
+});
+
+// 🟢 **GET: Fetch Stored Collections**
+app.get("/api/collections", async (req, res) => {
+  try {
+    const collections = await CollectionModel.find().sort({ _id: -1 });
+    res.status(200).json({ data: collections });
+  } catch (error) {
+    res.status(500).json({ message: "❌ Error fetching collections", error: error.message });
+  }
+});
+
+// 🟢 **PUT: Update Collection Data**
+app.put("/api/collections/:id", async (req, res) => {
+  try {
+
+    const { id } = req.params;
+    const { title, description, image, price, features } = req.body;
+
+    // Validate input fields
+    if (!title || !description || !image || !price || !Array.isArray(features) || features.length === 0) {
+      return res.status(400).json({ message: "All fields are required & features must be an array" });
+    }
+
+    // Ensure price is a valid number
+    const updatedPrice = parseFloat(price);
+    if (isNaN(updatedPrice) || updatedPrice < 0) {
+      return res.status(400).json({ message: "Invalid price value" });
+    }
+
+    // Find and update collection
+    const updatedCollection = await CollectionModel.findByIdAndUpdate(
+      id,
+      { title, description, image, price: updatedPrice, features },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCollection) {
+      return res.status(404).json({ message: "❌ Collection not found" });
+    }
+
+    io.emit("collectionUpdated");
+
+    res.status(200).json({ message: "✅ Collection updated successfully!", data: updatedCollection });
+  } catch (error) {
+    res.status(500).json({ message: "❌ Error updating collection", error: error.message });
+  }
+});
+
+
+// 🟢 **DELETE: Remove Collection**
+app.delete("/api/collections/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedCollection = await CollectionModel.findByIdAndDelete(id);
+
+    if (!deletedCollection) {
+      return res.status(404).json({ message: "❌ Collection not found" });
+    }
+
+    io.emit("collectionUpdated");
+
+    res.status(200).json({ message: "✅ Collection deleted successfully!" });
+  } catch (error) {
+    res.status(500).json({ message: "❌ Error deleting collection", error: error.message });
+  }
+});
+
+
 
 
 // Start Server

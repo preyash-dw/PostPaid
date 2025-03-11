@@ -1,64 +1,42 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Second.css";
-import ContactModal from "../components/ContactModal.jsx";
-const collections = [
-  {
-    title: "Standard",
-    description: "Entry-level numbers with a touch of elegance.",
-    image: "https://imgproxy.gamma.app/resize/quality:80/resizing_type:fit/width:1000/height:1000/https://cdn.gamma.app/x9nevgt5zry9aea/generated-images/zHQ2-wioFI6cKcz5ZKck1.jpg",
-    price: "$50",
-    features: ["Basic number selection", "Standard customer support", "Affordable pricing"],
-  },
-  {
-    title: "Silver",
-    description: "More distinct and eye-catching, adding a subtle sense of prestige.",
-    image: "https://imgproxy.gamma.app/resize/quality:80/resizing_type:fit/width:1000/height:1000/https://cdn.gamma.app/x9nevgt5zry9aea/generated-images/uCxyTxcDJn9Pj-W55Y4HG.jpg",
-    price: "$100",
-    features: ["Priority selection", "Enhanced visibility", "24/7 customer support"],
-  },
-  {
-    title: "Silver Plus",
-    description: "Elevated numbers with a noticeable presence, conveying a sophisticated image.",
-    image: "https://imgproxy.gamma.app/resize/quality:80/resizing_type:fit/width:1000/height:1000/https://cdn.gamma.app/x9nevgt5zry9aea/generated-images/3mnB-Vm0ggqdBl6Hez-6u.jpg",
-    price: "$150",
-    features: ["Premium support", "Exclusive deals", "Extended validity"],
-  },
-  {
-    title: "Gold",
-    description: "Numbers that exude luxury and exclusivity, ideal for those who demand the best.",
-    image: "https://imgproxy.gamma.app/resize/quality:80/resizing_type:fit/width:1000/height:1000/https://cdn.gamma.app/x9nevgt5zry9aea/generated-images/Xgh2bfi52zyHg6UxjH79G.jpg",
-    price: "$250",
-    features: ["VIP selection", "Premium branding", "Exclusive hotline support"],
-  },
-  {
-    title: "Gold Plus",
-    description: "A step above Gold with enhanced customization options.",
-    image: "https://imgproxy.gamma.app/resize/quality:80/resizing_type:fit/width:1000/height:1000/https://cdn.gamma.app/x9nevgt5zry9aea/generated-images/_1kcB6OEEXcdNMQ1bkcUH.jpg",
-    price: "$350",
-    features: ["Ultra-VIP selection", "Custom branding", "Dedicated account manager"],
-  },
-  {
-    title: "Platinum",
-    description: "The highest level of exclusivity and prestige in our collection.",
-    image: "https://imgproxy.gamma.app/resize/quality:80/resizing_type:fit/width:1000/height:1000/https://cdn.gamma.app/x9nevgt5zry9aea/generated-images/mlZq6Xrmsje6siwcK-m4C.jpg",
-    price: "$500",
-    features: ["Ultimate exclusivity", "Custom concierge service", "Lifetime validity"],
-  },
-];
+import axios from "axios";
+import { io } from "socket.io-client";
+
+const API_URL = process.env.REACT_APP_API_URL;
+const socket = io(API_URL, { transports: ["websocket", "polling"] }); // ✅ Connect to the socket server
 
 const Second = () => {
+  const [collections, setCollections] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
-  
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 🟢 Function to fetch collections
+  const fetchCollections = () => {
+    axios
+      .get(`${API_URL}/api/collections`)
+      .then((response) => setCollections(response.data.data))
+      .catch((error) => console.error("❌ Error fetching collections:", error));
+  };
+
+  useEffect(() => {
+    fetchCollections(); // ✅ Initial fetch
+
+    // 🟢 Listen for collection updates
+    socket.on("collectionUpdated", fetchCollections);
+
+    return () => {
+      socket.off("collectionUpdated", fetchCollections); // Cleanup listener on unmount
+    };
+  }, []);
 
   return (
     <div className="collection-container">
       <h2 className="collection-title">Our Exclusive Collection</h2>
       <div className="collection-grid">
         {collections.map((item, index) => (
-          <div 
-            className="collection-item" 
-            key={index} 
+          <div
+            className="collection-item"
+            key={index}
             onClick={() => setSelectedItem(item)}
           >
             <img src={item.image} alt={item.title} className="collection-image" />
@@ -69,9 +47,14 @@ const Second = () => {
       </div>
 
       {/* Modal */}
-      <div className={`modal-overlay ${selectedItem ? "show" : ""}`} onClick={() => setSelectedItem(null)}>
+      <div
+        className={`modal-overlay ${selectedItem ? "show" : ""}`}
+        onClick={() => setSelectedItem(null)}
+      >
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <span className="close-modal" onClick={() => setSelectedItem(null)}>&times;</span>
+          <span className="close-modal" onClick={() => setSelectedItem(null)}>
+            &times;
+          </span>
           {selectedItem && (
             <>
               <img src={selectedItem.image} alt={selectedItem.title} className="modal-image" />
@@ -86,7 +69,6 @@ const Second = () => {
               <button className="contact-button">Contact Us</button>
             </>
           )}
-
         </div>
       </div>
     </div>
