@@ -206,13 +206,10 @@ app.delete("/api/data/:id", async (req, res) => {
 
 
 
-
 const CollectionSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
-  image: { type: String, required: true }, // Accepts URL from frontend
-  price: { type: Number, required: true, min: 0 },
-  features: { type: [String], required: true },
+  image: { type: String, required: true } // Accepts URL from frontend
 });
 
 const CollectionModel = mongoose.model("Collection", CollectionSchema);
@@ -220,20 +217,14 @@ const CollectionModel = mongoose.model("Collection", CollectionSchema);
 // 🟢 **POST: Store Collection Data**
 app.post("/api/collections", async (req, res) => {
   try {
-    let { title, description, image, price, features } = req.body;
+    let { title, description, image } = req.body;
 
     // Validate input fields
-    if (!title || !description || !image || !price || !Array.isArray(features) || features.length === 0) {
-      return res.status(400).json({ message: "All fields are required & features must be an array" });
+    if (!title || !description || !image) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Ensure price is a valid number
-    price = parseFloat(price);
-    if (isNaN(price) || price < 0) {
-      return res.status(400).json({ message: "Invalid price value" });
-    }
-
-    const newCollection = new CollectionModel({ title, description, image, price, features });
+    const newCollection = new CollectionModel({ title, description, image });
     await newCollection.save();
     io.emit("collectionUpdated");
     res.status(201).json({ message: "✅ Collection item stored!", data: newCollection });
@@ -256,25 +247,18 @@ app.get("/api/collections", async (req, res) => {
 // 🟢 **PUT: Update Collection Data**
 app.put("/api/collections/:id", async (req, res) => {
   try {
-
     const { id } = req.params;
-    const { title, description, image, price, features } = req.body;
+    const { title, description, image } = req.body;
 
     // Validate input fields
-    if (!title || !description || !image || !price || !Array.isArray(features) || features.length === 0) {
-      return res.status(400).json({ message: "All fields are required & features must be an array" });
-    }
-
-    // Ensure price is a valid number
-    const updatedPrice = parseFloat(price);
-    if (isNaN(updatedPrice) || updatedPrice < 0) {
-      return res.status(400).json({ message: "Invalid price value" });
+    if (!title || !description || !image) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     // Find and update collection
     const updatedCollection = await CollectionModel.findByIdAndUpdate(
       id,
-      { title, description, image, price: updatedPrice, features },
+      { title, description, image },
       { new: true, runValidators: true }
     );
 
@@ -283,19 +267,16 @@ app.put("/api/collections/:id", async (req, res) => {
     }
 
     io.emit("collectionUpdated");
-
     res.status(200).json({ message: "✅ Collection updated successfully!", data: updatedCollection });
   } catch (error) {
     res.status(500).json({ message: "❌ Error updating collection", error: error.message });
   }
 });
 
-
 // 🟢 **DELETE: Remove Collection**
 app.delete("/api/collections/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
     const deletedCollection = await CollectionModel.findByIdAndDelete(id);
 
     if (!deletedCollection) {
@@ -303,14 +284,11 @@ app.delete("/api/collections/:id", async (req, res) => {
     }
 
     io.emit("collectionUpdated");
-
     res.status(200).json({ message: "✅ Collection deleted successfully!" });
   } catch (error) {
     res.status(500).json({ message: "❌ Error deleting collection", error: error.message });
   }
 });
-
-
 
 
 // Start Server
