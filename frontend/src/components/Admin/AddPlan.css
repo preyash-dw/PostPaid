@@ -1,0 +1,98 @@
+.add-plan-container {
+  max-width: 700px;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #f9f9f9;
+}
+
+/* First row - Title, Type, Price */
+.row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+input, select {
+  width: 90%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Features section */
+.features-section, .promotions-section {
+  margin-bottom: 20px;
+}
+
+.feature-input, .promotion-input {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+button {
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* List Items */
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+ul li {
+  background: #eee;
+  padding: 8px;
+  margin: 5px 0;
+  display: flex;
+  justify-content: space-between;
+  border-radius: 5px;
+}
+
+ul li button {
+  background: red;
+  padding: 5px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  color: white;
+}
+
+/* Submit Button */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #28a745;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background-color: #218838;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-input, .promotion-input {
+    flex-direction: column;
+  }
+}

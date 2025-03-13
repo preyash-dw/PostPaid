@@ -291,6 +291,111 @@ app.delete("/api/collections/:id", async (req, res) => {
 });
 
 
+const planSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+  },
+  features: [
+    {
+      heading: { type: String, required: true },
+      description: { type: String, required: true },
+    },
+  ],
+  promotions: [
+    {
+      type: String, // Simple string array for promotions
+    },
+  ],
+  type: {
+    type: String,
+    enum: ["Standard", "Silver", "Silver Plus", "Gold", "Gold Plus", "Platinum"],
+    required: true,
+  },
+  price: {
+    type: Number,
+    required: true,
+  },
+});
+
+const Plan = mongoose.model("Plan", planSchema);
+
+// 🟢 Create a new plan
+app.post("/api/plans", async (req, res) => {
+  try {
+    const { title, features, promotions, type, price } = req.body;
+
+    if (!title || !type || !price) {
+      return res.status(400).json({ message: "Title, Type, and Price are required" });
+    }
+
+    const newPlan = new Plan({ title, features, promotions, type, price });
+    await newPlan.save();
+    io.emit("collectionUpdated");
+    res.status(201).json({ message: "Plan created successfully", data: newPlan });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// 🟢 Get all plans
+app.get("/api/plans", async (req, res) => {
+  try {
+    const plans = await Plan.find();
+    res.json({ data: plans });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// 🟢 Get a single plan by ID
+app.get("/api/plans/type/:type", async (req, res) => {
+  try {
+    const plans = await Plan.find({ type: req.params.type });
+
+    if (plans.length === 0) {
+      return res.status(404).json({ message: "No plans found for this type" });
+    }
+
+    res.json({ data: plans });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
+// 🟢 Update a plan
+app.put("/api/plans/:id", async (req, res) => {
+  try {
+    const { title, features, promotions, type, price } = req.body;
+
+    const updatedPlan = await Plan.findByIdAndUpdate(
+      req.params.id,
+      { title, features, promotions, type, price },
+      { new: true }
+    );
+
+    if (!updatedPlan) return res.status(404).json({ message: "Plan not found" });
+    io.emit("collectionUpdated");
+    res.json({ message: "Plan updated successfully", data: updatedPlan });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// 🟢 Delete a plan
+app.delete("/api/plans/:id", async (req, res) => {
+  try {
+    const deletedPlan = await Plan.findByIdAndDelete(req.params.id);
+    if (!deletedPlan) return res.status(404).json({ message: "Plan not found" });
+    io.emit("collectionUpdated");
+    res.json({ message: "Plan deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+
 // Start Server
 const PORT = process.env.PORT || 10000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

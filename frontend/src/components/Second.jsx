@@ -1,16 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "./Second.css";
 import axios from "axios";
 import { io } from "socket.io-client";
+import PlanCard from "./PlanCard.jsx"; // Import the PlanCard component
 
 const API_URL = process.env.REACT_APP_API_URL;
-const socket = io(API_URL, { transports: ["websocket", "polling"] }); // ✅ Connect to the socket server
+const socket = io(API_URL, { transports: ["websocket", "polling"] });
 
 const Second = () => {
   const [collections, setCollections] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
-  // 🟢 Function to fetch collections
+  const planListRef = useRef(null);
+
+  // Fetch collections
   const fetchCollections = () => {
     axios
       .get(`${API_URL}/api/collections`)
@@ -19,15 +26,63 @@ const Second = () => {
   };
 
   useEffect(() => {
-    fetchCollections(); // ✅ Initial fetch
+    fetchCollections(); // Initial fetch
 
-    // 🟢 Listen for collection updates
+    // Listen for real-time updates
     socket.on("collectionUpdated", fetchCollections);
 
     return () => {
-      socket.off("collectionUpdated", fetchCollections); // Cleanup listener on unmount
+      socket.off("collectionUpdated", fetchCollections); // Cleanup
     };
   }, []);
+
+  // Fetch plans when a collection item is clicked
+  const fetchPlansByType = async (type) => {
+    setLoading(true);
+    setPlans([]); // Reset plans before fetching new ones
+    try {
+      const response = await axios.get(`${API_URL}/api/plans/type/${type}`);
+      setPlans(response.data.data);
+    } catch (error) {
+      console.error("❌ Error fetching plans:", error);
+      setPlans([]); // If no plans found, clear
+    }
+    setLoading(false);
+  };
+
+  // Handle collection item click
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    fetchPlansByType(item.title);
+  };
+
+  // Scroll functionality
+  const scrollLeft = () => {
+    if (planListRef.current) {
+      planListRef.current.scrollBy({ left: -300, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    if (planListRef.current) {
+      planListRef.current.scrollBy({ left: 300, behavior: "smooth" });
+    }
+  };
+
+  // Check if scrolling is needed
+  const checkScroll = () => {
+    if (planListRef.current) {
+      const { scrollWidth, clientWidth, scrollLeft } = planListRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollWidth > clientWidth + scrollLeft);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener("resize", checkScroll);
+    return () => window.removeEventListener("resize", checkScroll);
+  }, [plans]); // Check scroll every time plans change
 
   return (
     <div className="collection-container">
@@ -37,7 +92,7 @@ const Second = () => {
           <div
             className="collection-item"
             key={index}
-            onClick={() => setSelectedItem(item)}
+            onClick={() => handleItemClick(item)}
           >
             <img src={item.image} alt={item.title} className="collection-image" />
             <h3 className="collection-item-title">{item.title}</h3>
@@ -47,30 +102,36 @@ const Second = () => {
       </div>
 
       {/* Modal */}
-      <div
-        className={`modal-overlay ${selectedItem ? "show" : ""}`}
-        onClick={() => setSelectedItem(null)}
-      >
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <span className="close-modal" onClick={() => setSelectedItem(null)}>
-            &times;
-          </span>
-          {selectedItem && (
-            <>
-              <img src={selectedItem.image} alt={selectedItem.title} className="modal-image" />
-              <h3>{selectedItem.title}</h3>
-              <p>{selectedItem.description}</p>
-              <h4>Price: {selectedItem.price}</h4>
-              <ul className="modal-features">
-                {selectedItem.features.map((feature, i) => (
-                  <li key={i}>✔ {feature}</li>
-                ))}
-              </ul>
-              <button className="contact-button">Contact Us</button>
-            </>
-          )}
+      {selectedItem && (
+        <div className="secondmodal-overlay show" onClick={() => setSelectedItem(null)}>
+          <div className="secondmodal-content" onClick={(e) => e.stopPropagation()}>
+            {loading ? <p>Loading plans...</p> : null}
+
+            <div className="plan-list-container">
+              {canScrollLeft && (
+                <button className="scroll-button scroll-left" onClick={scrollLeft}>
+                  &lt;
+                </button>
+              )}
+              <div className="plan-list" ref={planListRef} onScroll={checkScroll}>
+              {plans.length > 0 ? (
+  plans.map((plan, index) => <PlanCard key={index} plan={plan} />)
+) : (
+  !loading && <p>No plans found for this type.</p>
+)}
+
+              </div>
+              {canScrollRight && (
+                <button className="scroll-button scroll-right" onClick={scrollRight}>
+                  &gt;
+                </button>
+              )}
+            </div>
+
+            <button className="close-btn" onClick={() => setSelectedItem(null)}>X</button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -1,0 +1,193 @@
+/* General container */
+.plans-list-container {
+  width: 90%;
+  max-width: 900px;
+  margin: 10px auto;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+/* Table styles */
+.plans-list-container table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+table th {
+  background: linear-gradient(to bottom, #4299e1, #7f59ca);
+  color: white;
+}
+
+/* Table row hover effect */
+tbody tr {
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background: #f0f0f0;
+}
+
+/* Modal Styles */
+.planmodal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.planmodal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 500px;
+  text-align: center;
+  max-height: 80vh;
+  overflow-y: scroll;
+}
+
+/* Modal heading */
+.planmodal-content h2 {
+  margin-bottom: 15px;
+}
+
+/* Inputs and Select Dropdown */
+.row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.row input, .row select {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Feature and Promotion Sections */
+.feature-section, .promotion-section {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+/* Feature/Pricing Heading */
+.feature-section h3, .promotion-section h3 {
+  
+  padding: 8px;
+  font-weight: bold;
+  margin-bottom: 1px;
+}
+
+/* 🟢 Display Existing Features and Promotions in a Row */
+.feature-list, .promotion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+  padding: 10px;
+  background: #f4f4f4;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+/* Feature/Pricing Paragraph Styling */
+.feature-item, .promotion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+/* Remove button (red ❌) */
+.remove-btn {
+  background: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+.remove-btn:hover {
+  background: darkred;
+}
+
+/* Feature input row */
+.feature-input, .promotion-input {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.feature-input input, .promotion-input input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Add Buttons */
+button.add-feature, button.add-promotion {
+  background: red;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: block;
+  margin-top: 5px;
+}
+
+button.add-feature:hover, button.add-promotion:hover {
+  background: darkred;
+}
+
+/* Button row (Update, Delete, Close) */
+.button-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+/* Action buttons */
+.update-btn {
+  background: green;
+  color: white;
+}
+
+.delete-btn {
+  background: red;
+  color: white;
+}
+
+.close-btn {
+  background: gray;
+  color: white;
+}
+
+/* Common button styles */
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  opacity: 0.8;
+}

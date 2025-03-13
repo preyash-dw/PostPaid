@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;700&family=Montserrat:wght@400;700&display=swap');
 
 .collection-container {
-    text-align: left;
+    text-align: left !important;
     background-color: #f4f4f4;
     padding: 20px;
 }
@@ -33,7 +33,9 @@
     transition: transform 0.3s ease-in-out;
 }
 
-
+.collection-item:hover {
+    transform: scale(1.05);
+}
 
 .collection-image {
     width: 100%;
@@ -60,7 +62,7 @@
 }
 
 /* ---- MODAL STYLING ---- */
-.modal-overlay {
+.secondmodal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -68,25 +70,24 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.6);
     display: flex;
-    align-items: center;
-    justify-content: center;
+    /* align-items: center;
+    justify-content: center; */
     z-index: 999;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
 }
 
-.modal-overlay.show {
+.secondmodal-overlay.show {
     opacity: 1;
     visibility: visible;
 }
 
-.modal-content {
-    background: white;
+.secondmodal-content {
+    
     padding: 20px;
     border-radius: 12px;
-    width: 400px;
-    text-align: center;
+    width: 90%;
     position: relative;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
     transform: translateY(-20px);
@@ -94,70 +95,82 @@
     transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
 
-.modal-overlay.show .modal-content {
+.secondmodal-overlay.show .secondmodal-content {
     transform: translateY(0);
     opacity: 1;
 }
 
-.modal-image {
-    width: 100%;
-    border-radius: 10px;
-}
-
-.modal-features {
-    list-style: none;
-    padding: 0;
-    text-align: left;
-    margin-top: 10px;
-}
-
-.modal-features li {
-    font-size: 1rem;
-    color: #444;
-    margin: 5px 0;
-    padding-left: 20px;
-    position: relative;
-}
-
-.modal-features li::before {
-    content: "✔";
-    color: #4CAF50;
-    font-weight: bold;
-    position: absolute;
-    left: 0;
-}
-
 /* Close Button */
-.close-modal {
+ .secondmodal-content .close-btn {
     position: absolute;
     top: 10px;
-    right: 15px;
-    font-size: 1.5rem;
-    cursor: pointer;
+    right: -2rem;
+    background: #777676;
+    border: none;
+    font-size: 1rem;
+    
     color: #333;
-    transition: color 0.3s;
+    cursor: pointer;
+    transition: color 0.3s ease-in-out;
 }
 
-.close-modal:hover {
+ .secondmodal-content .close-btn:hover {
     color: #ff0000;
 }
 
-/* Contact Us Button */
-.contact-button {
-    background: linear-gradient(to right, #4299e1, #7f59ca);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    margin-top: 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.3s ease-in-out;
+
+.plan-list {
+    display: flex;
+    flex-wrap: nowrap; /* Ensures items do not wrap */
+    overflow-x: auto; /* Enables horizontal scrolling */
+    scrollbar-width: none; /* Hides scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hides scrollbar in IE/Edge */
+    scroll-behavior: smooth;
+    gap: 15px; /* Adds spacing between items */
+    width: 100%; /* Ensures it takes full width */
 }
 
-.contact-button:hover {
-    background: linear-gradient(to right, #7f59ca, #4299e1);
+.plan-list::-webkit-scrollbar {
+    display: none; /* Hides scrollbar in Chrome/Safari */
 }
+
+/* Ensure PlanCard does not shrink */
+.plan-list > * {
+    flex: 0 0 auto; /* Prevents shrinking */
+    width: 300px; /* Set a fixed width for PlanCards */
+    max-width: 100%; /* Ensures responsiveness */
+}
+
+/* Scroll buttons */
+.plan-list-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    
+}
+
+.plan-list-container .scroll-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 2;
+    font-size: 1.5rem;
+}
+
+.scroll-left {
+    left: 0;
+}
+
+.scroll-right {
+    right: 0;
+}
+
 
 /* Responsive Styles */
 @media (max-width: 1024px) {  /* Tablets */
@@ -183,8 +196,8 @@
         font-size: 1rem;
     }
 
-    .modal-content {
-        width: 350px;
+    .secondmodal-content {
+        width: 400px;
     }
 }
 
@@ -212,8 +225,21 @@
         font-size: 0.95rem;
     }
 
-    .modal-content {
-        width: 90%;
+    .secondmodal-content {
+        width: 95%;
+        max-width: 90%;
+        padding: 15px;
+        max-height: 85vh; /* Allow more height on smaller devices */
+    }
+
+    .secondmodal-content .close-btn {
+        right: 10px;
+        top: 10px;
+    }
+
+    .scroll-button {
+        padding: 8px 12px;
+        font-size: 1.2rem;
     }
 }
 
@@ -243,12 +269,13 @@
         font-size: 0.9rem;
     }
 
-    .modal-content {
-        width: 95%;
-        padding: 15px;
+    .secondmodal-content {
+        width: 100%;
+        max-width: 95%;
+        padding: 10px;
     }
 
-    .contact-button {
-        padding: 10px 15px;
+    .scroll-button {
+        display: none; /* Hide scroll buttons on very small screens */
     }
 }

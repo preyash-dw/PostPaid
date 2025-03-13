@@ -1,0 +1,175 @@
+.plan-card {
+  width: 250px;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+  font-family: Arial, sans-serif;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+  background: white;
+  padding: 15px;
+  position: relative; /* Ensure positioning context */
+}
+
+/* Move the badge to the top border */
+.badge {
+  background: rgb(122, 122, 122);
+  color: white;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  position: absolute; /* Position relative to .plan-card */
+  top: -5px; /* Adjust this value to place it on the top border */
+  left: 50%;
+  transform: translateX(-50%); /* Center the badge */
+  font-weight: bold;
+}
+
+
+  
+  .plan-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+  
+  .plan-details p {
+    margin: 5px 0;
+    color: #696969;
+    font-size: 12px;
+    
+  }
+  .prommore{
+    cursor:pointer;
+  }
+  
+  .highlight {
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    color: black !important;
+  }
+  
+  .additional-benefits {
+    margin-top: 10px;
+  }
+  .additional-benefits p{
+    color: #696969;
+    font-size: 14px;
+  }
+  
+  .icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .icon {
+    background: #eee;
+    padding: 5px;
+    border-radius: 50%;
+    font-size: 12px;
+  }
+  
+  .more {
+    color: red;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  
+  .plan-card .promotion-section {
+    background: red;
+    color: white;
+    margin-top: 10px;
+    width: calc(100% + 30px);
+    position: relative;
+    left: -15px; 
+  }
+ 
+  
+  
+  .plan-card .promotion-section .promotion-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-left: 5%;
+  }
+  
+ .plan-card .promotion-section ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    margin-left: 1%;
+    margin-top: -7%;
+  }
+  
+  .promotion-section li {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 2px 0;
+    background: none !important;
+  }
+  
+  .price-section {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .price-section p{
+    font-size: 12px;
+  }
+  .toggle-switch {
+    width: 40px;
+    height: 20px;
+    background: #ff0000;
+    border-radius: 20px;
+    position: relative;
+    margin-top: 7px;
+    margin-right: 30%;
+  }
+  
+  .toggle-switch::after {
+    content: "";
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    left: 20px;
+    top: 1px;
+  }
+  
+ .vat-section{
+  margin-top: -9%;
+ }
+  .aed{
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .vat-text {
+    font-size: 12px;
+    color: gray;
+    margin-top: -5%;
+  }
+  
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  
+  .details-btn, .select-btn {
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .details-btn {
+   background: none;
+  text-decoration: underline;
+    color: black;
+    cursor:pointer;
+  }
+  
+  .select-btn {
+    background: black;
+    color: white;
+  }
+  
