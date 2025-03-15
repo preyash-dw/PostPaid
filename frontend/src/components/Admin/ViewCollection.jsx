@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import "./ViewCollection.css";
 
 const API_URL = process.env.REACT_APP_API_URL;
+const socket = io(API_URL); // Connect to backend Socket.IO
 
 const ViewCollection = () => {
   const [collections, setCollections] = useState([]);
@@ -11,20 +13,30 @@ const ViewCollection = () => {
   const [updateDescription, setUpdateDescription] = useState("");
 
   // Fetch collections from API
+  const fetchCollections = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/collections`);
+      const result = await response.json();
+      setCollections(result.data);
+    } catch (error) {
+      console.error("Error fetching collections:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchCollections = async () => {
-      try {
-        const response = await fetch(`${API_URL}/api/collections`);
-        const result = await response.json();
-        setCollections(result.data);
-      } catch (error) {
-        console.error("Error fetching collections:", error);
-      }
-    };
     fetchCollections();
+
+    // Listen for collection updates via Socket.IO
+    socket.on("collectionUpdated", () => {
+      fetchCollections(); // Fetch new collections when an update is detected
+    });
+
+    return () => {
+      socket.off("collectionUpdated"); // Cleanup listener on component unmount
+    };
   }, []);
 
-  // Handle card click to open modal with selected item
+  // Handle card click to open modal
   const handleCardClick = (collection) => {
     setSelectedItem(collection);
     setUpdateTitle(collection.title);
@@ -51,11 +63,6 @@ const ViewCollection = () => {
       alert(result.message);
 
       if (response.ok) {
-        setCollections((prev) =>
-          prev.map((item) =>
-            item._id === selectedItem._id ? { ...item, ...updatedData } : item
-          )
-        );
         setModalOpen(false);
       }
     } catch (error) {
@@ -73,7 +80,6 @@ const ViewCollection = () => {
       alert(result.message);
 
       if (response.ok) {
-        setCollections((prev) => prev.filter((item) => item._id !== selectedItem._id));
         setModalOpen(false);
       }
     } catch (error) {
