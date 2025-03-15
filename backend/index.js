@@ -138,8 +138,17 @@ app.get("/api/data", async (req, res) => {
     if (type) {
       query.type = { $in: type.split(",").filter((t) => t.trim()) };
     }
-    if (startWith) query.number = new RegExp(`^${startWith}`, "i");
-    if (search) query.number = { $regex: `^${search}`, $options: "i" };
+
+    if (startWith && search) {
+      query.number = { 
+        $regex: `^${startWith}.*${search}`, 
+        $options: "i" 
+      };
+    } else if (startWith) {
+      query.number = new RegExp(`^${startWith}`, "i");
+    } else if (search) {
+      query.number = new RegExp(search, "i");
+    }
 
     if (date) {
       const startDate = new Date(date);
@@ -159,6 +168,7 @@ app.get("/api/data", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // ✅ Update Status
 app.put("/api/data/:id", async (req, res) => {
