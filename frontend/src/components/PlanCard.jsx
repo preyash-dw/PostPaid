@@ -24,14 +24,6 @@ const PlanCard = ({ plan }) => {
         ))}
       </div>
 
-      <div className="additional-benefits">
-        <p>Additional Benefits</p>
-        <div className="icons">
-          <span className="icon">🟣</span>
-          <span className="icon">🟢</span>
-          <span className="more">+2 more</span>
-        </div>
-      </div>
 
       {/* Promotion Section */}
       {plan.promotions.length > 0 && (
@@ -59,7 +51,6 @@ const PlanCard = ({ plan }) => {
       {/* Price Section */}
       <div className="price-section">
         <p>12-month commitment</p>
-        <div className="toggle-switch"></div>
       </div>
 
       <div className="vat-section">
@@ -68,10 +59,9 @@ const PlanCard = ({ plan }) => {
       </div>
 
       {/* Buttons */}
-      <div className="buttons">
-        <button className="details-btn">More details</button>
+      {/* <div className="buttons">
         <button className="select-btn">Select plan</button>
-      </div>
+      </div> */}
     </div>
   );
 };
