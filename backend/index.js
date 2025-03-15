@@ -206,13 +206,21 @@ app.delete("/api/data/:id", async (req, res) => {
 
 
 
-const CollectionSchema = new mongoose.Schema({
+const collectionSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, required: true, trim: true },
   image: { type: String, required: true } // Accepts URL from frontend
 });
+const CollectionModel = mongoose.model("Collection", collectionSchema);
 
-const CollectionModel = mongoose.model("Collection", CollectionSchema);
+// Function to capitalize the first letter of each word
+const capitalizeWords = (text) => {
+  return text
+    .toLowerCase()
+    .split(" ")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 // 🟢 **POST: Store Collection Data**
 app.post("/api/collections", async (req, res) => {
@@ -224,11 +232,21 @@ app.post("/api/collections", async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Capitalize each word in title
+    title = capitalizeWords(title);
+
+    // Check if a collection with the same title already exists
+    const existingCollection = await CollectionModel.findOne({ title });
+    if (existingCollection) {
+      return res.status(400).json({ message: "❌ A collection with this title already exists" });
+    }
+
+    // Store new collection
     const newCollection = new CollectionModel({ title, description, image });
     await newCollection.save();
     io.emit("collectionUpdated");
     res.status(201).json({ message: "✅ Collection item stored!", data: newCollection });
-    
+
   } catch (error) {
     res.status(500).json({ message: "❌ Error storing collection", error: error.message });
   }
@@ -248,12 +266,15 @@ app.get("/api/collections", async (req, res) => {
 app.put("/api/collections/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, image } = req.body;
+    let { title, description, image } = req.body;
 
     // Validate input fields
     if (!title || !description || !image) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    // Capitalize each word in title
+    title = capitalizeWords(title);
 
     // Find and update collection
     const updatedCollection = await CollectionModel.findByIdAndUpdate(
@@ -268,6 +289,7 @@ app.put("/api/collections/:id", async (req, res) => {
 
     io.emit("collectionUpdated");
     res.status(200).json({ message: "✅ Collection updated successfully!", data: updatedCollection });
+
   } catch (error) {
     res.status(500).json({ message: "❌ Error updating collection", error: error.message });
   }
