@@ -72,13 +72,17 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
-    const stream = xlsx.stream.to_json(workbook.Sheets[sheetName], { raw: false });
+    const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: false });
+
+    if (jsonData.length === 0) {
+      return res.status(400).json({ message: "Excel file is empty!" });
+    }
 
     const bulkOps = [];
     const today = new Date();
     const formattedToday = today.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 
-    stream.on("data", (row) => {
+    jsonData.forEach((row) => {
       if (!row.Number) return;
 
       let extractedType = row.status?.trim() || row.Status?.trim() || "Standard";
@@ -108,16 +112,25 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       });
     });
 
-    stream.on("end", async () => {
-      await DataModel.bulkWrite(bulkOps, { ordered: false }); // ✅ Faster Inserts
-      io.emit("dataUpdated");
-      res.status(200).json({ message: "✅ Data uploaded successfully!" });
-    });
+    console.log(`Total records to insert: ${bulkOps.length}`);
+
+    if (bulkOps.length > 0) {
+      for (let i = 0; i < bulkOps.length; i += 500) { // Insert in batches of 500
+        await DataModel.bulkWrite(bulkOps.slice(i, i + 500), { ordered: false });
+      }
+    } else {
+      return res.status(400).json({ message: "No valid rows found in the file" });
+    }
+
+    io.emit("dataUpdated");
+    res.status(200).json({ message: `✅ Successfully uploaded ${bulkOps.length} records!` });
 
   } catch (err) {
+    console.error("Upload Error:", err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // ✅ Fetch Initial Data
 app.get("/api/data/initial", async (req, res) => {
