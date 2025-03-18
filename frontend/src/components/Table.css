@@ -115,6 +115,14 @@
     cursor: not-allowed;
   }
   
+  .page-input {
+    width: 50px;
+    text-align: center;
+    margin: 0 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
   
 
   @media (max-width: 768px) {

@@ -212,14 +212,41 @@ const Table = () => {
       </table>
 
       <div className="pagination">
-        <button disabled={page === 1} onClick={() => setPage(page - 1)} className="prev-button">
-          Prev
-        </button>
-        <span>Page {page} of {Math.ceil(total / limit)}</span>
-        <button disabled={page * limit >= total} onClick={() => setPage(page + 1)} className="next-button">
-          Next
-        </button>
-      </div>
+  <button disabled={page === 1} onClick={() => setPage(page - 1)} className="prev-button">
+    Prev
+  </button>
+  <div className="page">
+  <span>Page</span>
+  <input
+    type="number"
+    value={page}
+    min="1"
+    max={Math.ceil(total / limit) || 1}
+    onChange={(e) => {
+      const pageNumber = Number(e.target.value);
+      if (pageNumber > 0 && pageNumber <= Math.ceil(total / limit)) {
+        setPage(pageNumber);
+      }
+    }}
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        const pageNumber = Number(e.target.value);
+        if (pageNumber > 0 && pageNumber <= Math.ceil(total / limit)) {
+          setPage(pageNumber);
+        }
+      }
+    }}
+    className="page-input"
+  />
+  <span>of {Math.ceil(total / limit)}</span>
+
+  </div>
+  
+  <button disabled={page * limit >= total} onClick={() => setPage(page + 1)} className="next-button">
+    Next
+  </button>
+</div>
+
     </div>
   );
 };
