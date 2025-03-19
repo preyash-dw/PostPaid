@@ -39,7 +39,7 @@ const View = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [updateType, setUpdateType] = useState("");
-  const [updateStatus, setUpdateStatus] = useState("false");
+  const [updateStatus, setUpdateStatus] = useState("");
   const [updateMessage, setUpdateMessage] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
 
@@ -135,7 +135,7 @@ const View = () => {
   const openModal = (item) => {
     setSelectedItem(item);
     setUpdateType(item.type);
-    setUpdateStatus(item.status === "Booked" ? "true" : "false");
+    setUpdateStatus(item.status); 
     setModalOpen(true);
   };
 
@@ -147,7 +147,7 @@ const View = () => {
     try {
       await axios.put(`${API_URL}/api/data/${selectedItem._id}`, {
         type: updateType,
-        status: updateStatus === "true" ? "Booked" : new Date().toDateString(),
+        status: updateStatus,
       });
 
       setUpdateMessage("✅ Data updated successfully!");
@@ -321,12 +321,13 @@ const View = () => {
                 <option key={option} value={option}>{option}</option>
               ))}
             </select>
-
             <label>Status:</label>
-            <select value={updateStatus} onChange={(e) => setUpdateStatus(e.target.value)}>
-              <option value="false">Not Booked</option>
-              <option value="true">Booked</option>
-            </select>
+<input
+  type="text"
+  value={updateStatus}
+  onChange={(e) => setUpdateStatus(e.target.value)}
+/>
+
 
             <button onClick={handleUpdate} className="update-btn">Update</button>
             <button onClick={handleDelete} className="delete-btn">Delete</button>

@@ -245,6 +245,7 @@ const Table = () => {
   <button disabled={page * limit >= total} onClick={() => setPage(page + 1)} className="next-button">
     Next
   </button>
+  
 </div>
 
     </div>
