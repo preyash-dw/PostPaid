@@ -112,7 +112,6 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       });
     });
 
-    console.log(`Total records to insert: ${bulkOps.length}`);
 
     if (bulkOps.length > 0) {
       for (let i = 0; i < bulkOps.length; i += 500) { // Insert in batches of 500
@@ -222,6 +221,48 @@ app.delete("/api/data/:id", async (req, res) => {
     res.status(200).json({ message: "✅ Data deleted successfully!" });
   } catch (err) {
     res.status(500).json({ message: "❌ Error deleting data.", error: err.message });
+  }
+});
+
+app.post("/api/delete-from-excel", upload.single("file"), async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const jsonData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: false });
+
+    if (jsonData.length === 0) {
+      return res.status(400).json({ message: "Excel file is empty!" });
+    }
+
+    // Extract numbers from the "Number" column
+    const numbersToDelete = jsonData
+      .map(row => String(row.Number).trim())
+      .filter(num => num.length > 0);
+
+    if (numbersToDelete.length === 0) {
+      return res.status(400).json({ message: "No valid numbers found in the file" });
+    }
+
+
+    // Delete all matching records
+    const deleteResult = await DataModel.deleteMany({ number: { $in: numbersToDelete } });
+
+    if (deleteResult.deletedCount > 0) {
+      io.emit("dataUpdated");
+      return res.status(200).json({ message: `✅ Successfully deleted ${deleteResult.deletedCount} records!` });
+    } else {
+      return res.status(404).json({ message: "No matching records found for deletion." });
+    }
+
+  } catch (err) {
+    console.error("Delete from Excel Error:", err);
+    res.status(500).json({ message: "❌ Error processing file.", error: err.message });
   }
 });
 

@@ -218,26 +218,25 @@ const Table = () => {
   <div className="page">
   <span>Page</span>
   <input
-    type="number"
-    value={page}
-    min="1"
-    max={Math.ceil(total / limit) || 1}
-    onChange={(e) => {
+  type="number"
+  value={page > 0 && page <= Math.ceil(total / limit) ? page : ""}
+  min="1"
+  placeholder="Page"
+  max={Math.ceil(total / limit) || 1}
+  onChange={(e) => {
+    const pageNumber = e.target.value === "" ? "" : Number(e.target.value);
+    setPage(pageNumber);
+  }}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
       const pageNumber = Number(e.target.value);
       if (pageNumber > 0 && pageNumber <= Math.ceil(total / limit)) {
         setPage(pageNumber);
       }
-    }}
-    onKeyDown={(e) => {
-      if (e.key === "Enter") {
-        const pageNumber = Number(e.target.value);
-        if (pageNumber > 0 && pageNumber <= Math.ceil(total / limit)) {
-          setPage(pageNumber);
-        }
-      }
-    }}
-    className="page-input"
-  />
+    }
+  }}
+  className="page-input"
+/>
   <span>of {Math.ceil(total / limit)}</span>
 
   </div>
