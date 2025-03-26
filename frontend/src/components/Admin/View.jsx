@@ -126,11 +126,6 @@ const View = () => {
     );
   };
 
-  const formatStatus = (status) => {
-    if (status === "Booked") return "Booked";
-    const date = new Date(status);
-    return !isNaN(date) ? date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Invalid Date";
-  };
 
   const openModal = (item) => {
     setSelectedItem(item);
@@ -283,7 +278,7 @@ const View = () => {
                 <tr key={item._id} >
                   <td onClick={() => openModal(item)}>{item.number}</td>
                   <td onClick={() => openModal(item)}>{item.type}</td>
-                  <td onClick={() => openModal(item)}>{formatStatus(item.status)}</td>
+                  <td onClick={() => openModal(item)}>{item.status}</td>
                   <td>
         <input
           type="checkbox"

@@ -130,11 +130,11 @@ const Table = () => {
     );
   };
 
-  const formatStatus = (status) => {
-    if (status === "Booked") return "Booked";
-    const date = new Date(status);
-    return !isNaN(date) ? date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Invalid Date";
-  };
+  // const formatStatus = (status) => {
+  //   if (status === "Booked") return "Booked";
+  //   const date = new Date(status);
+  //   return !isNaN(date) ? date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Invalid Date";
+  // };
 
   return (
     <div className="table-container">
@@ -205,7 +205,7 @@ const Table = () => {
                 <tr key={item._id}>
                   <td>{item.number}</td>
                   <td>{item.type}</td>
-                  <td>{formatStatus(item.status)}</td>
+                  <td>{item.status}</td>
                 </tr>
               ))}
         </tbody>
