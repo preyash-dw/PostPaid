@@ -186,7 +186,7 @@ app.get("/api/data", async (req, res) => {
 
     const total = await DataModel.countDocuments(query);
     const data = await DataModel.find(query, { number: 1, type: 1, status: 1, submissionDate: 1 })
-    .sort({ batchId: -1, excelOrder: 1 }) // ✅ First by batchId (latest file), then by excelOrder (row order)
+    .sort({ batchId: -1, excelOrder: -1 }) // ✅ First by batchId (latest file), then by excelOrder (row order)
     .skip((page - 1) * Number(limit))
     .limit(Number(limit));
   

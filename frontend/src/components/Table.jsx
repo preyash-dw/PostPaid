@@ -63,7 +63,7 @@ const Table = () => {
 
       // Check for Initial Load
       if (isFirstLoad) {
-        const initialResponse = await fetch(`${API_URL}/api/data/initial`);
+        const initialResponse = await fetch(`${API_URL}/api/data`);
         if (!initialResponse.ok) throw new Error("Failed to fetch initial data");
 
         const initialResult = await initialResponse.json();
