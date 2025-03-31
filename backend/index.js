@@ -8,6 +8,8 @@ const multer = require("multer");
 const xlsx = require("xlsx");
 const cors = require("cors");
 const compression = require("compression");
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const server = http.createServer(app);
@@ -50,15 +52,19 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// ✅ Optimized Schema with Indexes
-const DataSchema = new mongoose.Schema({
-  number: { type: String, required: true, unique: true, index: true },
-  type: { type: String, required: true, index: true },
-  status: { type: String, required: true, index: true },
-  submissionDate: { type: Date, default: Date.now, index: true },
-});
+  const DataSchema = new mongoose.Schema({
+    number: { type: String, required: true, unique: true, index: true },
+    type: { type: String, required: true, index: true },
+    status: { type: String, required: true, index: true },
+    previousStatus: { type: String, default: null },
+    submissionDate: { type: Date, default: Date.now, index: true },
+    batchId: { type: Number, required: true, index: true }, 
+    excelOrder: { type: Number, required: true, index: true },
+  }, { timestamps: true });
+  
+  const DataModel = mongoose.model("Data", DataSchema);
+  
 
-const DataModel = mongoose.model("Data", DataSchema);
 
 // ✅ Use Memory Storage Instead of Disk Storage
 const storage = multer.memoryStorage();
@@ -79,11 +85,12 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     }
 
     const bulkOps = [];
+    const batchId = Date.now(); // Unique identifier for this upload
     const today = new Date();
-    const formattedToday = today.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 
-    jsonData.forEach((row) => {
-      if (!row.Number) return;
+    for (let i = 0; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      if (!row.Number) continue;
 
       let extractedType = row.status?.trim() || row.Status?.trim() || "Standard";
       let extractedStatus = String(row.REMARKS ?? "").trim();
@@ -91,7 +98,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       if (extractedStatus.toLowerCase() === "booked") {
         extractedStatus = "Booked";
       } else if (!extractedStatus) {
-        extractedStatus = formattedToday;
+        extractedStatus = today.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
       } else {
         const parsedDate = new Date(extractedStatus);
         if (!isNaN(parsedDate)) {
@@ -103,18 +110,28 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
 
+      const submissionDate = new Date(); // Capture time of upload
+
       bulkOps.push({
         updateOne: {
           filter: { number: row.Number },
-          update: { $set: { number: row.Number, type: extractedType, status: extractedStatus, submissionDate: today } },
+          update: {
+            $set: {
+              number: row.Number,
+              type: extractedType,
+              status: extractedStatus,
+              submissionDate,
+              batchId,
+              excelOrder: i + 1, // ✅ Maintain Excel row order
+            },
+          },
           upsert: true,
         },
       });
-    });
-
+    }
 
     if (bulkOps.length > 0) {
-      for (let i = 0; i < bulkOps.length; i += 500) { // Insert in batches of 500
+      for (let i = 0; i < bulkOps.length; i += 500) {
         await DataModel.bulkWrite(bulkOps.slice(i, i + 500), { ordered: false });
       }
     } else {
@@ -131,6 +148,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 });
 
 
+
 // ✅ Fetch Initial Data
 app.get("/api/data/initial", async (req, res) => {
   try {
@@ -144,7 +162,7 @@ app.get("/api/data/initial", async (req, res) => {
 // ✅ Optimized Paginated Data Fetch
 app.get("/api/data", async (req, res) => {
   try {
-    const { page = 1, limit = 50, type, search, startWith, date } = req.query;
+    const { page = 1, limit = 50, type, search, startWith, status=" "} = req.query;
     const query = {};
 
     if (type) {
@@ -162,18 +180,16 @@ app.get("/api/data", async (req, res) => {
       query.number = new RegExp(search, "i");
     }
 
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setHours(23, 59, 59, 999);
-      query.submissionDate = { $gte: startDate, $lte: endDate };
+    if (status?.trim()) {
+      query.status = status;
     }
 
     const total = await DataModel.countDocuments(query);
-    const data = await DataModel.find(query, { number: 1, type: 1, status: 1, submissionDate: 1 }) // ✅ Optimized Projection
-      .sort({ submissionDate: -1 })
-      .skip((page - 1) * Number(limit))
-      .limit(Number(limit));
+    const data = await DataModel.find(query, { number: 1, type: 1, status: 1, submissionDate: 1 })
+    .sort({ batchId: -1, excelOrder: 1 }) // ✅ First by batchId (latest file), then by excelOrder (row order)
+    .skip((page - 1) * Number(limit))
+    .limit(Number(limit));
+  
 
     res.status(200).json({ data, total, page: Number(page), limit: Number(limit) });
   } catch (err) {
@@ -182,22 +198,42 @@ app.get("/api/data", async (req, res) => {
 });
 
 
-// ✅ Update Status
 app.put("/api/data/:id", async (req, res) => {
   try {
     const { type, status } = req.body;
-    if (!type || !status) return res.status(400).json({ message: "Type and Status are required" });
 
-    const updatedData = await DataModel.findByIdAndUpdate(req.params.id, { type, status }, { new: true });
+    if (!type) {
+      return res.status(400).json({ message: "Type is required" });
+    }
 
-    if (!updatedData) return res.status(404).json({ message: "Data not found" });
+    const data = await DataModel.findById(req.params.id);
+
+    if (!data) {
+      return res.status(404).json({ message: "Data not found" });
+    }
+
+    // ✅ Check if status is empty or cleared
+    let newStatus = status?.trim();
+    if (!newStatus) {
+      newStatus = data.previousStatus || data.status; // Restore previous status if empty
+    } else {
+      data.previousStatus = data.status; // Store current status as previous
+    }
+
+    // ✅ Update the data
+    data.type = type;
+    data.status = newStatus;
+
+    await data.save();
 
     io.emit("dataUpdated");
-    res.status(200).json({ message: "✅ Data updated successfully", data: updatedData });
+    res.status(200).json({ message: "✅ Data updated successfully", data });
   } catch (err) {
+    console.error("Update Error:", err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // ✅ Bulk Delete
 app.post("/api/data/bulk-delete", async (req, res) => {
@@ -285,6 +321,17 @@ const capitalizeWords = (text) => {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 };
+
+
+app.get("/api/collections/titles", async (req, res) => {
+  try {
+    const titles = await CollectionModel.find({}, "title"); // Only fetch titles using projection
+    res.status(200).json(titles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 // 🟢 **POST: Store Collection Data**
 app.post("/api/collections", async (req, res) => {
@@ -395,7 +442,6 @@ const planSchema = new mongoose.Schema({
   ],
   type: {
     type: String,
-    enum: ["Standard", "Silver", "Silver Plus", "Gold", "Gold Plus", "Platinum"],
     required: true,
   },
   price: {
@@ -480,6 +526,93 @@ app.delete("/api/plans/:id", async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
+
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  }
+});
+
+// Hash password before saving
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
+// Compare password
+userSchema.methods.comparePassword = async function (password) {
+  return bcrypt.compare(password, this.password);
+};
+
+// Generate JWT
+userSchema.methods.generateToken = function () {
+  return jwt.sign({ id: this._id }, 'your_secret_key', { expiresIn: '1h' });
+};
+
+const User = mongoose.model('User', userSchema);
+
+
+app.post('/login', async (req, res) => {
+  const { name, password } = req.body;
+
+  try {
+    const user = await User.findOne({ name });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = user.generateToken();
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+app.post('/register', async (req, res) => {
+  const { name, email, password } = req.body;
+
+  try {
+    // Check if the user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Create a new user
+    const newUser = new User({ name, email, password });
+
+    // Save the user to the database
+    await newUser.save();
+
+    // Generate a token
+    const token = newUser.generateToken();
+
+    res.status(201).json({ message: 'User registered successfully', token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 
 // Start Server

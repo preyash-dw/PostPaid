@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./AddPlan.css";
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -12,7 +12,28 @@ const AddPlan = () => {
   const [featureDescription, setFeatureDescription] = useState("");
   const [newPromotion, setNewPromotion] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false); // 🔹 Loading state added
+  const [loading, setLoading] = useState(false);
+  const [planTitles, setPlanTitles] = useState([]); // ✅ State for fetched titles
+
+  // 🟢 Fetch Titles on Dropdown Click
+  const fetchTitles = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/collections/titles`);
+      if (!response.ok) throw new Error(`Failed to fetch titles: ${response.statusText}`);
+      const data = await response.json();
+      
+      // Ensure data is in the correct format
+      if (Array.isArray(data)) {
+        setPlanTitles(data);
+      } else {
+        throw new Error("Unexpected response format");
+      }
+    } catch (error) {
+      console.error("Error fetching titles:", error);
+      setMessage("❌ Failed to fetch titles. Please try again.");
+    }
+  };
+  
 
   // 🟢 Add a new feature
   const addFeature = () => {
@@ -44,8 +65,8 @@ const AddPlan = () => {
   // 🟢 Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return; // Prevent multiple clicks
-    setLoading(true); // Set loading to true
+    if (loading) return;
+    setLoading(true);
     setMessage("");
 
     if (!title || !type || !price) {
@@ -70,8 +91,6 @@ const AddPlan = () => {
         setType("");
         setPrice("");
         setFeatures([]);
-        setFeatureHeading("");
-        setFeatureDescription("");
         setPromotions([]);
       } else {
         setMessage(result.message || "❌ Error adding plan");
@@ -79,7 +98,7 @@ const AddPlan = () => {
     } catch (error) {
       setMessage("❌ Server error, please try again.");
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
@@ -91,25 +110,34 @@ const AddPlan = () => {
       <form onSubmit={handleSubmit}>
         {/* First Row - Title, Type, Price */}
         <div className="row">
-          <input type="text" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <select value={type} onChange={(e) => setType(e.target.value)} required>
-            <option value="">Select Type</option>
-            <option value="Standard">Standard</option>
-            <option value="Silver">Silver</option>
-            <option value="Silver Plus">Silver Plus</option>
-            <option value="Gold">Gold</option>
-            <option value="Gold Plus">Gold Plus</option>
-            <option value="Platinum">Platinum</option>
-          </select>
+        <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+
+<select onFocus={fetchTitles} value={type} onChange={(e) => setType(e.target.value)} required>
+  <option value="">Select Type</option>
+  {planTitles.map((planTitle, index) => (
+    <option key={index} value={planTitle.title}>
+      {planTitle.title}
+    </option>
+  ))}
+</select>
+
+
+
           <input type="number" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} required />
         </div>
 
-        {/* Second Row - Features */}
+        {/* Features Section */}
         <div className="features-section">
           <div className="feature-input">
             <input type="text" placeholder="Feature Heading" value={featureHeading} onChange={(e) => setFeatureHeading(e.target.value)} />
             <input type="text" placeholder="Feature Description" value={featureDescription} onChange={(e) => setFeatureDescription(e.target.value)} />
-            <button type="button" onClick={addFeature} disabled={loading}>Add Feature</button>
+            <button type="button" onClick={addFeature}>Add Feature</button>
           </div>
           <ul>
             {features.map((feature, index) => (
@@ -121,11 +149,11 @@ const AddPlan = () => {
           </ul>
         </div>
 
-        {/* Third Row - Promotions */}
+        {/* Promotions Section */}
         <div className="promotions-section">
           <div className="promotion-input">
             <input type="text" placeholder="Enter Promotion" value={newPromotion} onChange={(e) => setNewPromotion(e.target.value)} />
-            <button type="button" onClick={addPromotion} disabled={loading}>Add Promotion</button>
+            <button type="button" onClick={addPromotion}>Add Promotion</button>
           </div>
           <ul>
             {promotions.map((promo, index) => (

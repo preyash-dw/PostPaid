@@ -32,7 +32,7 @@ const View = () => {
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -45,6 +45,7 @@ const View = () => {
 
   const debouncedSearch = useDebounce(search, 500);
   const debouncedStartWith = useDebounce(startWith, 500);
+  const debouncedStatus=useDebounce(selectedStatus,500);
 
   const cache = useRef(new Map());
 
@@ -52,7 +53,7 @@ const View = () => {
     async (forceUpdate = false) => {
       try {
         setLoading(true);
-        const cacheKey = `${page}-${limit}-${debouncedSearch}-${debouncedStartWith}-${selectedTypes.join(",")}-${selectedDate}`;
+        const cacheKey = `${page}-${limit}-${debouncedSearch}-${debouncedStartWith}-${selectedTypes.join(",")}-${debouncedStatus}`;
 
         if (forceUpdate) {
           cache.current.clear();
@@ -70,8 +71,11 @@ const View = () => {
           search: debouncedSearch,
           startWith: debouncedStartWith,
           type: selectedTypes.join(","),
-          date: selectedDate,
         });
+
+        if(debouncedStatus?.trim()){
+          queryParams.append("status",debouncedStatus);
+        }
 
         const response = await fetch(`${API_URL}/api/data?${queryParams}`);
         if (!response.ok) throw new Error("Failed to fetch data");
@@ -87,16 +91,16 @@ const View = () => {
         setLoading(false);
       }
     },
-    [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]
+    [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, debouncedStatus]
   );
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]);
+  }, [debouncedSearch, debouncedStartWith, selectedTypes, debouncedStatus]);
 
   useEffect(() => {
     fetchData();
-  }, [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate, fetchData]);
+  }, [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, debouncedStatus, fetchData]);
 
   useEffect(() => {
     if (selectedTypes.length === 0) {
@@ -236,9 +240,9 @@ const View = () => {
         />
 
         <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          type="text"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
           className="view-search-box"
         />
         <input

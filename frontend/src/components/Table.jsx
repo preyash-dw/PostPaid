@@ -34,72 +34,88 @@ const Table = () => {
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const debouncedSearch = useDebounce(search, 500);
   const debouncedStartWith = useDebounce(startWith, 500);
+  const debouncedStatus=useDebounce(selectedStatus,500);
 
   // Store cache in a ref so it persists across renders
   const cache = useRef(new Map());
 
-  const fetchData = useCallback(
-    async (forceUpdate = false) => {
-      try {
-        setLoading(true);
-        const cacheKey = `${page}-${limit}-${debouncedSearch}-${debouncedStartWith}-${selectedTypes.join(",")}-${selectedDate}`;
+ const fetchData = useCallback(
+  async (forceUpdate = false) => {
+    try {
+      setLoading(true);
+      const cacheKey = `${page}-${limit}-${debouncedSearch}-${debouncedStartWith}-${selectedTypes.join(",")}-${debouncedStatus}`;
 
-        if (forceUpdate) {
-          cache.current.clear();
-        }
-
-        if (!forceUpdate && cache.current.has(cacheKey)) {
-          setData(cache.current.get(cacheKey));
-          setLoading(false);
-          return;
-        }
-
-        let url;
-        if (isFirstLoad) {
-          url = `${API_URL}/api/data/initial`;
-          setIsFirstLoad(false);
-        } else {
-          const queryParams = new URLSearchParams({
-            page,
-            limit,
-            search: debouncedSearch,
-            startWith: debouncedStartWith,
-            type: selectedTypes.join(","),
-            date: selectedDate,
-          });
-          url = `${API_URL}/api/data?${queryParams}`;
-        }
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Failed to fetch data");
-
-        const result = await response.json();
-        cache.current.set(cacheKey, result.data);
-
-        setData(result.data);
-        setTotal(result.total);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
+      if (forceUpdate) {
+        cache.current.clear();
       }
-    },
-    [isFirstLoad,page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]
-  );
+
+      if (!forceUpdate && cache.current.has(cacheKey)) {
+        setData(cache.current.get(cacheKey));
+        setLoading(false);
+        return;
+      }
+
+      // Check for Initial Load
+      if (isFirstLoad) {
+        const initialResponse = await fetch(`${API_URL}/api/data/initial`);
+        if (!initialResponse.ok) throw new Error("Failed to fetch initial data");
+
+        const initialResult = await initialResponse.json();
+        cache.current.set(cacheKey, initialResult.data);
+        setData(initialResult.data);
+        setTotal(initialResult.total);
+        setLoading(false);
+        setIsFirstLoad(false);
+
+        // Immediately call /api/data for further data
+        fetchData(false);
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        page,
+        limit,
+        search: debouncedSearch,
+        startWith: debouncedStartWith,
+        type: selectedTypes.join(","),
+      });
+
+      if (debouncedStatus?.trim()) {
+        queryParams.append("status", debouncedStatus);
+      }
+
+      const url = `${API_URL}/api/data?${queryParams}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch data");
+
+      const result = await response.json();
+      cache.current.set(cacheKey, result.data);
+
+      setData(result.data);
+      setTotal(result.total);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  },
+  [isFirstLoad, page, limit, debouncedSearch, debouncedStartWith, selectedTypes, debouncedStatus]
+);
+
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, debouncedStartWith, selectedTypes, selectedDate]);
+  }, [debouncedSearch, debouncedStartWith, selectedTypes, debouncedStatus]);
 
   useEffect(() => {
     fetchData();
-  }, [page, limit, debouncedSearch, debouncedStartWith, selectedTypes, selectedDate, fetchData]);
+  }, [page, limit, debouncedSearch, debouncedStartWith, selectedTypes,debouncedStatus, fetchData]);
   
   useEffect(() => {
     if (selectedTypes.length === 0) {
@@ -130,11 +146,7 @@ const Table = () => {
     );
   };
 
-  // const formatStatus = (status) => {
-  //   if (status === "Booked") return "Booked";
-  //   const date = new Date(status);
-  //   return !isNaN(date) ? date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Invalid Date";
-  // };
+
 
   return (
     <div className="table-container">
@@ -169,9 +181,15 @@ const Table = () => {
         />
 
         <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          type="text"
+          value={selectedStatus}
+          onChange={(e) => {
+            const value = e.target.value;
+            setSelectedStatus(value);
+            if (!value) {
+              fetchData(true); 
+            }
+          }}
           className="search-box"
         />
         <input
